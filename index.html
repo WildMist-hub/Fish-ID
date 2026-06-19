@@ -1,161 +1,626 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2487.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MID — Species Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c2a30;
+    --bg-deep:#081d22;
+    --panel:#123942;
+    --panel-soft:#16424c;
+    --ink:#eaf3ef;
+    --ink-dim:#9bc4bf;
+    --ink-faint:#6f9b96;
+    --line:rgba(234,243,239,0.10);
+    --line-strong:rgba(234,243,239,0.18);
+    --coral:#ff7a59;
+    --coral-soft:rgba(255,122,89,0.14);
+    --aqua:#5fd9c4;
+    --aqua-soft:rgba(95,217,196,0.14);
+    --gold:#e8b86d;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(95,217,196,0.10), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255,122,89,0.07), transparent 55%),
+      var(--bg-deep);
+    color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:clamp(20px,4vw,52px) clamp(16px,4vw,32px) 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--aqua);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:7px;height:7px;border-radius:50%;
+    background:var(--aqua);
+    box-shadow:0 0 0 4px var(--aqua-soft);
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(28px,4.4vw,40px);
+    line-height:1.08;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--ink-dim);
+    font-size:14.5px;
+    max-width:52ch;
+    line-height:1.5;
+    margin:0 0 30px;
+  }
+
+  /* ---------- Search (cell A1) ---------- */
+  .search-field{
+    position:relative;
+    margin-bottom:22px;
+  }
+  .search-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    display:block;
+    margin-bottom:8px;
+  }
+  .search-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--panel);
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    padding:13px 16px;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .search-box:focus-within{
+    border-color:var(--aqua);
+    box-shadow:0 0 0 4px var(--aqua-soft);
+  }
+  .search-box svg{flex:none;color:var(--ink-faint);}
+  #speciesInput{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:16px;
+    font-weight:500;
+    min-width:0;
+  }
+  #speciesInput::placeholder{color:var(--ink-faint);font-weight:400;}
+  .clear-btn{
+    background:none;border:none;color:var(--ink-faint);cursor:pointer;
+    padding:4px;border-radius:6px;display:flex;line-height:0;
+    transition:color .15s ease, background .15s ease;
+  }
+  .clear-btn:hover{color:var(--coral);background:rgba(255,122,89,0.10);}
+
+  .dropdown{
+    position:absolute;
+    top:calc(100% + 8px);
+    left:0;right:0;
+    background:var(--panel-soft);
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    max-height:300px;
+    overflow-y:auto;
+    z-index:30;
+    box-shadow:0 18px 40px rgba(2,12,14,0.45);
+    display:none;
+  }
+  .dropdown.open{display:block;}
+  .dropdown-item{
+    padding:10px 16px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    border-bottom:1px solid var(--line);
+  }
+  .dropdown-item:last-child{border-bottom:none;}
+  .dropdown-item:hover,
+  .dropdown-item.active{background:rgba(95,217,196,0.08);}
+  .dropdown-item .dn-common{font-size:14.5px;font-weight:500;}
+  .dropdown-item .dn-latin{font-size:12px;font-style:italic;color:var(--ink-faint);}
+  .dropdown-empty{padding:16px;color:var(--ink-faint);font-size:13.5px;text-align:center;}
+  mark{background:var(--coral-soft);color:var(--coral);border-radius:3px;padding:0 1px;}
+
+  /* ---------- Hero / banner (cell A2) ---------- */
+  .hero{
+    position:relative;
+    display:flex;
+    background:linear-gradient(135deg, var(--panel) 0%, var(--panel-soft) 100%);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .ruler{
+    flex:none;
+    width:34px;
+    background:rgba(8,29,34,0.45);
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:14px 0;
+  }
+  .ruler span{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;
+    color:var(--ink-faint);
+    text-align:center;
+    position:relative;
+  }
+  .ruler span::after{
+    content:"";
+    position:absolute;
+    left:50%;top:100%;
+    width:1px;height:6px;
+    background:var(--line-strong);
+    transform:translateX(-50%);
+  }
+  .hero-body{
+    flex:1;
+    min-width:0;
+    padding:26px clamp(18px,3vw,32px);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:10px;
+  }
+  .hero-name{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(24px,3.6vw,34px);
+    line-height:1.06;
+    letter-spacing:-0.01em;
+  }
+  .hero-latin{
+    font-style:italic;
+    color:var(--aqua);
+    font-size:clamp(14px,1.8vw,16.5px);
+  }
+  .hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+  .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.03em;
+    padding:5px 11px;
+    border-radius:99px;
+    border:1px solid var(--line-strong);
+    color:var(--ink-dim);
+    background:rgba(8,29,34,0.3);
+  }
+  .tag.coral{color:var(--coral);border-color:rgba(255,122,89,0.4);}
+  .tag.aqua{color:var(--aqua);border-color:rgba(95,217,196,0.4);}
+  .hero-empty{color:var(--ink-faint);font-size:14px;}
+
+  /* ---------- Stat sections (rows 3/4, 5/6, 7/8) ---------- */
+  .section{
+    margin-bottom:14px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .section-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:13px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  .section-head .dot{width:6px;height:6px;border-radius:50%;background:var(--aqua);flex:none;}
+  .section-head h2{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin:0;
+    font-weight:500;
+  }
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+  }
+  .stat{
+    padding:16px 18px;
+    border-right:1px solid var(--line);
+    border-top:1px solid var(--line);
+    min-width:0;
+  }
+  .stat-grid .stat:nth-child(5n){border-right:none;}
+  .stat-grid .stat:nth-child(-n+5){border-top:none;}
+  .stat-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin-bottom:6px;
+  }
+  .stat-value{
+    font-size:14.5px;
+    font-weight:500;
+    line-height:1.35;
+    word-break:break-word;
+  }
+  .stat-value.muted{color:var(--ink-faint);font-weight:400;font-style:italic;}
+  .stat-value.empty-dash{color:var(--ink-faint);font-weight:400;}
+
+  .section.empty-section .stat-value{color:var(--ink-faint);}
+  .empty-note{
+    padding:10px 18px 16px;
+    font-size:12.5px;
+    color:var(--ink-faint);
+    border-top:none;
+  }
+
+  /* ---------- Footer status bar (rows 9/10) ---------- */
+  .statusbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    padding:14px 18px;
+    margin-top:22px;
+    border-top:1px dashed var(--line-strong);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+  }
+  .statusbar strong{color:var(--ink-dim);font-weight:500;}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:760px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .stat-grid .stat:nth-child(5n){border-right:1px solid var(--line);}
+    .stat-grid .stat:nth-child(2n){border-right:none;}
+    .stat-grid .stat:nth-child(-n+5){border-top:1px solid var(--line);}
+    .stat-grid .stat:nth-child(-n+2){border-top:none;}
+    .hero{flex-direction:column;}
+    .ruler{display:none;}
+  }
+  @media (max-width:460px){
+    .stat-grid{grid-template-columns:1fr;}
+    .stat-grid .stat{border-right:none !important;border-top:1px solid var(--line) !important;}
+    .stat-grid .stat:first-child{border-top:none !important;}
+    .statusbar{flex-direction:column;align-items:flex-start;}
+  }
+
+  @media (prefers-reduced-motion:no-preference){
+    .hero, .section{animation:rise .4s ease both;}
+    .section:nth-of-type(2){animation-delay:.04s;}
+    .section:nth-of-type(3){animation-delay:.08s;}
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  :focus-visible{outline:2px solid var(--aqua);outline-offset:2px;}
+</style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1">&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1">&lt;title&gt;Search Sheet Viewer&lt;/title&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;style&gt;</p>
-<p class="p1">body {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>margin: 0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>font-family: Arial, sans-serif;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background: #0f172a;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>color: white;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* Container with horizontal scroll */</p>
-<p class="p1">.wrapper {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>padding: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>overflow-x: auto;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* Spreadsheet grid */</p>
-<p class="p1">.sheet {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>display: grid;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>grid-template-columns: repeat(5, minmax(160px, 1fr));</p>
-<p class="p1"><span class="Apple-converted-space">    </span>grid-auto-rows: 42px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>gap: 1px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background: #334155;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>min-width: 900px;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* Cell style */</p>
-<p class="p1">.cell {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background: #1e293b;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>border: none;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>color: white;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>padding: 6px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>font-size: 13px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>outline: none;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* Header row */</p>
-<p class="p1">.header {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background: #0ea5e9;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>font-weight: bold;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>text-align: center;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* Readonly styling */</p>
-<p class="p1">.readonly {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>background: #111827;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>color: #9ca3af;</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">/* Dropdown styling */</p>
-<p class="p1">select.cell {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>appearance: none;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>cursor: pointer;</p>
-<p class="p1">}</p>
-<p class="p1">&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;div class="wrapper"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="sheet" class="sheet"&gt;&lt;/div&gt;</p>
-<p class="p1">&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;script&gt;</p>
-<p class="p1">// -------------------------</p>
-<p class="p1">// CONFIG (your sheet data)</p>
-<p class="p1">// -------------------------</p>
-<p class="p2"><br></p>
-<p class="p1">const rows = 10;</p>
-<p class="p1">const cols = 5;</p>
-<p class="p2"><br></p>
-<p class="p1">// Example dropdown values (customize freely)</p>
-<p class="p1">const dropdownOptions = {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>"B2": ["Fish", "Coral", "Nudibranch"],</p>
-<p class="p1"><span class="Apple-converted-space">    </span>"C2": ["Yes", "No"],</p>
-<p class="p1">};</p>
-<p class="p2"><br></p>
-<p class="p1">// Example read-only cells (like formulas)</p>
-<p class="p1">const readOnlyCells = ["A1", "B1", "C1", "D1", "E1"];</p>
-<p class="p2"><br></p>
-<p class="p1">// -------------------------</p>
-<p class="p1">// BUILD GRID</p>
-<p class="p1">// -------------------------</p>
-<p class="p2"><br></p>
-<p class="p1">const sheet = document.getElementById("sheet");</p>
-<p class="p2"><br></p>
-<p class="p1">function colLetter(i) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>return String.fromCharCode(65 + i); // A-E</p>
-<p class="p1">}</p>
-<p class="p2"><br></p>
-<p class="p1">for (let r = 1; r &lt;= rows; r++) {</p>
-<p class="p1"><span class="Apple-converted-space">    </span>for (let c = 0; c &lt; cols; c++) {</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>let cellId = colLetter(c) + r;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// HEADER ROW</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if (r === 1) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let div = document.createElement("div");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>div.className = "cell header";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>div.innerText = cellId;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>sheet.appendChild(div);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>continue;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// DROPDOWN CELL</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if (dropdownOptions[cellId]) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let select = document.createElement("select");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>select.className = "cell";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>dropdownOptions[cellId].forEach(opt =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>let o = document.createElement("option");</p>
-<p class="p1"><span class="Apple-converted-space">                </span>o.value = opt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>o.innerText = opt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>select.appendChild(o);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>sheet.appendChild(select);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>continue;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// READ ONLY CELL</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if (readOnlyCells.includes(cellId)) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let div = document.createElement("div");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>div.className = "cell readonly";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>div.contentEditable = false;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>div.innerText = "";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>sheet.appendChild(div);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>continue;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// NORMAL EDITABLE CELL</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let input = document.createElement("input");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>input.className = "cell";</p>
-<p class="p1"><span class="Apple-converted-space">        </span>input.setAttribute("data-cell", cellId);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>sheet.appendChild(input);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1">}</p>
-<p class="p1">&lt;/script&gt;</p>
-<p class="p2"><br></p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+<div class="wrap">
+
+  <div class="eyebrow">MID · Fish Database</div>
+  <h1>Species Search</h1>
+  <p class="subtitle">Look up a species by common or scientific name to pull its identification and behavior record from the catalog.</p>
+
+  <div class="search-field">
+    <span class="search-label">Search species (cell A1)</span>
+    <div class="search-box">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="speciesInput" type="text" autocomplete="off" placeholder="Type a common or scientific name…" role="combobox" aria-expanded="false" aria-controls="dropdownList" aria-autocomplete="list">
+      <button class="clear-btn" id="clearBtn" type="button" aria-label="Clear search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dropdown" id="dropdownList" role="listbox"></div>
+  </div>
+
+  <!-- Hero / A2 -->
+  <div class="hero">
+    <div class="ruler" aria-hidden="true">
+      <span>0m</span><span>10m</span><span>20m</span><span>30m</span><span>40m</span>
+    </div>
+    <div class="hero-body" id="heroBody">
+      <div class="hero-empty">Select a species above to load its record.</div>
+    </div>
+  </div>
+
+  <!-- Rows 3/4 -->
+  <div class="section">
+    <div class="section-head"><span class="dot"></span><h2>Identification</h2></div>
+    <div class="stat-grid" id="gridIdent"></div>
+  </div>
+
+  <!-- Rows 5/6 -->
+  <div class="section">
+    <div class="section-head"><span class="dot" style="background:var(--coral)"></span><h2>Behavior &amp; Habitat</h2></div>
+    <div class="stat-grid" id="gridBehavior"></div>
+  </div>
+
+  <!-- Rows 7/8 -->
+  <div class="section empty-section">
+    <div class="section-head"><span class="dot" style="background:var(--gold)"></span><h2>Field Notes</h2></div>
+    <div class="stat-grid" id="gridField"></div>
+    <div class="empty-note">Not yet logged for this catalog — reserved for future dive-log data.</div>
+  </div>
+
+  <div class="statusbar">
+    <span>#&nbsp; <strong id="countLabel">392</strong> species logged across 9 taxonomic groups</span>
+    <span id="resultStamp">No species selected</span>
+  </div>
+
+</div>
+
+<script>
+const DATA = [{"common":"Regal Angelfish","latin":"Pygoplites diacanthus","family":"Angelfish","maxsize":"25.0","habitat":"Coral-rich reefs","diet":"Sponges","behavior":"Shy feeder","social":"Solitary","group":"Bony Fish"},{"common":"Emperor Angelfish","latin":"Pomacanthus imperator","family":"Angelfish","maxsize":"40.0","habitat":"Reef slopes","diet":"Sponges / invertebrates","behavior":"Territorial","social":"Paired / solitary","group":"Bony Fish"},{"common":"Threespot Angelfish","latin":"Apolemichthys trimaculatus","family":"Angelfish","maxsize":"26.0","habitat":"Reef slopes","diet":"Sponges","behavior":"Foraging","social":"Solitary","group":"Bony Fish"},{"common":"Semicircle Angelfish","latin":"Pomacanthus semicirculatus","family":"Angelfish","maxsize":"40.0","habitat":"Reef lagoons","diet":"Sponges","behavior":"Paired","social":"Solitary","group":"Bony Fish"},{"common":"Goldtail Angelfish","latin":"Pomacanthus chrysurus","family":"Angelfish","maxsize":"35.0","habitat":"Reef slopes","diet":"Sponges / algae","behavior":"Territorial","social":"Paired","group":"Bony Fish"},{"common":"Threadfin Anthias","latin":"Nemanthias carberryi","family":"Anthias","maxsize":"12.0","habitat":"Outer reef slopes","diet":"Zooplankton","behavior":"Midwater schooling","social":"Schools","group":"Bony Fish"},{"common":"Great Barracuda","latin":"Sphyraena barracuda","family":"Barracudas","maxsize":"200.0","habitat":"Reef / pelagic","diet":"Fish","behavior":"Ambush predator","social":"Solitary","group":"Bony Fish"},{"common":"Pickhandle Barracuda","latin":"Sphyraena jello","family":"Barracudas","maxsize":"150.0","habitat":"Reef slopes","diet":"Fish","behavior":"Ambush predator","social":"Loose schools","group":"Bony Fish"},{"common":"Blackfin Barracuda","latin":"Sphyraena qenie","family":"Barracudas","maxsize":"140.0","habitat":"Outer reef","diet":"Fish","behavior":"Active hunter","social":"Schooling","group":"Bony Fish"},{"common":"Orbicular Batfish","latin":"Platax orbicularis","family":"Batfishes","maxsize":"60 cm","habitat":"Lagoons, reefs and mangroves","diet":"Jellyfish, algae, plankton","behavior":"Slow swimmer","social":"Schools, pairs","group":"Bony Fishes"},{"common":"African Batfish","latin":"Tripterodon orbis","family":"Spadefishes","maxsize":"75 cm","habitat":"Coastal reefs, outer reef slopes and deep reef areas","diet":"Rock- and coral-dwelling invertebrates","behavior":"Active forager","social":"Solitary, small groups","group":"Bony Fishes"},{"common":"Crescent-tail Bigeye","latin":"Priacanthus hamrur","family":"Bigeye","maxsize":"28.0","habitat":"Reef slopes","diet":"Zooplankton","behavior":"Nocturnal schooling","social":"Schooling","group":"Bony Fish"},{"common":"Xestus Blenny","latin":"Petroscirtes xestus","family":"Blennies","maxsize":"8 cm","habitat":"Coral rubble, empty shells","diet":"Plankton, detritus","behavior":"Cryptic","social":"Solitary","group":"Bony Fishes"},{"common":"Lance Blenny","latin":"Aspidontus dussumieri","family":"Blennies","maxsize":"11.0","habitat":"Reef slopes","diet":"Parasites / fins mimic","behavior":"Deceptive feeder","social":"Solitary","group":"Bony Fish"},{"common":"Bluestriped Fangblenny","latin":"Plagiotremus rhinorhynchos","family":"Blennies","maxsize":"10.0","habitat":"Reef holes","diet":"Fin biting / mucus","behavior":"Predatory mimic","social":"Solitary","group":"Bony Fish"},{"common":"Leopard Blenny","latin":"Exallias brevis","family":"Blennies","maxsize":"14.0","habitat":"Reef crevices","diet":"Algae","behavior":"Grazing","social":"Solitary","group":"Bony Fish"},{"common":"Yellow Boxfish","latin":"Ostracion cubicus","family":"Boxfishes","maxsize":"45 cm","habitat":"Coral reefs, lagoons, reef flats","diet":"Algae, sponges, tunicates","behavior":"Slow-moving, toxic secretion","social":"Solitary","group":"Bony Fishes"},{"common":"Horned Boxfish","latin":"Lactoria fornasini","family":"Boxfishes","maxsize":"40 cm","habitat":"Reef flats, lagoons","diet":"Algae, invertebrates","behavior":"Slow-moving","social":"Solitary","group":"Bony Fishes"},{"common":"Raccoon Butterflyfish","latin":"Chaetodon lunula","family":"Butterflyfish","maxsize":"20.0","habitat":"Reef lagoons / slopes","diet":"Coral / invertebrates","behavior":"Pair feeding","social":"Paired","group":"Bony Fish"},{"common":"Threadfin Butterflyfish","latin":"Chaetodon auriga","family":"Butterflyfish","maxsize":"23.0","habitat":"Reef slopes / lagoons","diet":"Coral polyps / inverts","behavior":"Pair feeding","social":"Paired","group":"Bony Fish"},{"common":"Saddleback Butterflyfish","latin":"Chaetodon falcula","family":"Butterflyfish","maxsize":"20.0","habitat":"Reef lagoons","diet":"Coral / inverts","behavior":"Pair feeding","social":"Paired","group":"Bony Fish"},{"common":"Blackback Butterflyfish","latin":"Chaetodon melannotus","family":"Butterflyfishes","maxsize":"18 cm","habitat":"Coral reefs, lagoons","diet":"Coral polyps, invertebrates","behavior":"Paired feeder","social":"Pairs","group":"Bony Fishes"},{"common":"Forceps Butterflyfish","latin":"Forcipiger flavissimus","family":"Butterflyfish","maxsize":"22.0","habitat":"Reef slopes","diet":"Small invertebrates","behavior":"Foraging pairs","social":"Paired","group":"Bony Fish"},{"common":"Blacklip Butterflyfish","latin":"Chaetodon kleinii","family":"Butterflyfish","maxsize":"15.0","habitat":"Reef lagoons","diet":"Zooplankton / algae","behavior":"Opportunistic","social":"Paired","group":"Bony Fish"},{"common":"Chevron Butterflyfish","latin":"Chaetodon trifascialis","family":"Butterflyfish","maxsize":"18.0","habitat":"Coral-rich slopes","diet":"Coral polyps","behavior":"Obligate coral feeder","social":"Paired","group":"Bony Fish"},{"common":"Madagascar Butterflyfish","latin":"Chaetodon madagaskariensis","family":"Butterflyfishes","maxsize":"14 cm","habitat":"Coral reefs","diet":"Coral polyps","behavior":"Paired feeder","social":"Pairs","group":"Bony Fishes"},{"common":"Spot-naped Butterflyfish","latin":"Chaetodon guttatissimus","family":"Butterflyfishes","maxsize":"12 cm","habitat":"Coral reefs","diet":"Coral polyps","behavior":"Paired feeder","social":"Pairs","group":"Bony Fishes"},{"common":"Black Pyramid Butterflyfish","latin":"Hemitaurichthys zoster","family":"Butterflyfish","maxsize":"18.0","habitat":"Outer reef","diet":"Zooplankton","behavior":"Dense schooling","social":"School","group":"Bony Fish"},{"common":"Zanzibar Butterflyfish","latin":"Chaetodon zanzibarensis","family":"Butterflyfishes","maxsize":"12 cm","habitat":"Coral reefs, lagoons","diet":"Coral polyps","behavior":"Paired feeder","social":"Pairs","group":"Bony Fishes"},{"common":"Bennett’s Butterflyfish","latin":"Chaetodon bennetti","family":"Butterflyfishes","maxsize":"14 cm","habitat":"Coral reefs","diet":"Coral polyps","behavior":"Paired feeder","social":"Pairs","group":"Bony Fishes"},{"common":"Eightband Butterflyfish","latin":"Chaetodon interruptus","family":"Butterflyfishes","maxsize":"16 cm","habitat":"Reef flats, lagoons","diet":"Coral polyps","behavior":"Paired feeder","social":"Pairs","group":"Bony Fishes"},{"common":"Meyer's Butterflyfish","latin":"Chaetodon meyeri","family":"Butterflyfishes","maxsize":"20 cm","habitat":"Coral-rich reefs","diet":"Coral polyps","behavior":"Paired feeder","social":"Pairs","group":"Bony Fishes"},{"common":"Longfin Bannerfish","latin":"Heniochus acuminatus","family":"Butterflyfish","maxsize":"25.0","habitat":"Reef slopes","diet":"Zooplankton","behavior":"Schooling","social":"School","group":"Bony Fish"},{"common":"Fiveline Cardinalfish","latin":"Cheilodipterus quinquelineatus","family":"Cardinalfish","maxsize":"12.0","habitat":"Reef caves","diet":"Zooplankton","behavior":"Nocturnal schooling","social":"Schooling","group":"Bony Fish"},{"common":"Orangelined Cardinalfish","latin":"Taeniamia fucata","family":"Cardinalfish","maxsize":"10.0","habitat":"Coral reefs","diet":"Zooplankton","behavior":"Nocturnal feeder","social":"Schooling","group":"Bony Fish"},{"common":"Black-rayed Shrimpgoby","latin":"Stonogobiops nematodes","family":"Gobies","maxsize":"7.0","habitat":"Sand / shrimp burrows","diet":"Plankton","behavior":"Symbiotic goby","social":"Paired","group":"Bony Fish"},{"common":"Skunk Anemonefish","latin":"Amphiprion akallopisos","family":"Clownfish","maxsize":"11.0","habitat":"Anemones","diet":"Zooplankton / algae","behavior":"Symbiotic territorial","social":"Paired","group":"Bony Fish"},{"common":"Allard's Anemonefish","latin":"Amphiprion allardi","family":"Clownfish","maxsize":"14.0","habitat":"Anemones","diet":"Zooplankton","behavior":"Symbiotic","social":"Paired","group":"Bony Fish"},{"common":"Cobia","latin":"Rachycentron canadum","family":"Cobia","maxsize":"200.0","habitat":"Reef / offshore","diet":"Fish / crustaceans","behavior":"Opportunistic predator","social":"Solitary","group":"Bony Fish"},{"common":"Pale Sandgoby","latin":"Fusigobius pallidus","family":"Gobies","maxsize":"5.0","habitat":"Sandy bottom","diet":"Small invertebrates","behavior":"Bottom sitter","social":"Solitary","group":"Bony Fish"},{"common":"Luther's Prawn-goby","latin":"Cryptocentrus lutheri","family":"Gobies","maxsize":"8.0","habitat":"Sand / burrows","diet":"Plankton","behavior":"Symbiotic shrimp goby","social":"Paired","group":"Bony Fish"},{"common":"Blue Blanquillo","latin":"Malacanthus latovittatus","family":"Codlets","maxsize":"35.0","habitat":"Reef slopes","diet":"Zooplankton","behavior":"Schooling","social":"Small groups","group":"Bony Fish"},{"common":"Scissortail Sergeant","latin":"Abudefduf sexfasciatus","family":"Damselfish","maxsize":"16.0","habitat":"Reef crest / lagoons","diet":"Plankton / algae","behavior":"Territorial breeding","social":"Schooling","group":"Bony Fish"},{"common":"Indo-Pacific Sergeant Major","latin":"Abudefduf vaigiensis","family":"Damselfish","maxsize":"17.0","habitat":"Reef flats / lagoons","diet":"Plankton / algae","behavior":"Territorial","social":"Schooling","group":"Bony Fish"},{"common":"Blackbar Damselfish","latin":"Plectroglyphidodon dickii","family":"Damselfish","maxsize":"10.0","habitat":"Coral reefs","diet":"Algae","behavior":"Territorial","social":"Solitary","group":"Bony Fish"},{"common":"Caerulean Damsel","latin":"Pomacentrus caeruleus","family":"Damselfish","maxsize":"9.0","habitat":"Reef slopes","diet":"Algae","behavior":"Territorial","social":"Small groups","group":"Bony Fish"},{"common":"Peacock Damsel","latin":"Pomacentrus pavo","family":"Damselfish","maxsize":"8.0","habitat":"Reef lagoons","diet":"Algae","behavior":"Territorial","social":"Schooling","group":"Bony Fish"},{"common":"Indian Ocean Humbug","latin":"Dascyllus abudafur","family":"Damselfish","maxsize":"10.0","habitat":"Coral heads","diet":"Plankton / algae","behavior":"Station-keeping","social":"Schooling","group":"Bony Fish"},{"common":"Dick’s Damselfish","latin":"Plectroglyphidodon dickii","family":"Damselfishes","maxsize":"10 cm","habitat":"Coral reefs","diet":"Algae","behavior":"Territorial","social":"Solitary","group":"Bony Fishes"},{"common":"Fire Dartfish","latin":"Nemateleotris magnifica","family":"Dartfish","maxsize":"9.0","habitat":"Sandy slopes","diet":"Plankton","behavior":"Hovering","social":"Pair","group":"Bony Fish"},{"common":"Twotone Dartfish","latin":"Ptereleotris evides","family":"Dartfish","maxsize":"12.0","habitat":"Sand / rubble","diet":"Plankton","behavior":"Hovering","social":"Pair/colony","group":"Bony Fish"},{"common":"Mandarin Fish","latin":"Synchiropus splendidus","family":"Dragonets","maxsize":"8 cm","habitat":"Sheltered coral reefs, coral rubble, lagoons","diet":"Copepods, amphipods and other small crustaceans","behavior":"Slow-moving micro-predator, most active at dusk","social":"Solitary, pairs during courtship","group":"Bony Fishes"},{"common":"Striped Eel Catfish","latin":"Plotosus lineatus","family":"Eel Catfishes","maxsize":"32 cm","habitat":"Coral reefs, lagoons and sandy bottoms","diet":"Crustaceans, worms, mollusks","behavior":"Bottom feeder","social":"Large schools, solitary adults","group":"Bony Fishes"},{"common":"Tiger Snake Eel","latin":"Myrichthys maculosus","family":"Eels","maxsize":"120.0","habitat":"Sandy reef","diet":"Fish / crustaceans","behavior":"Nocturnal burrower","social":"Solitary","group":"Bony Fish"},{"common":"Bigeye Bream","latin":"Monotaxis grandoculis","family":"Emperors","maxsize":"60 cm","habitat":"Coral reefs and reef slopes","diet":"Fishes, crustaceans, mollusks","behavior":"Nocturnal predator","social":"Solitary, small groups","group":"Bony Fishes"},{"common":"Spangled Emperor","latin":"Lethrinus nebulosus","family":"Emperors","maxsize":"80 cm","habitat":"Reef slopes, sandy areas","diet":"Fishes, crustaceans","behavior":"Nocturnal predator","social":"Solitary","group":"Bony Fishes"},{"common":"Scrawled Filefish","latin":"Aluterus scriptus","family":"Filefishes","maxsize":"110 cm","habitat":"Coral reefs, lagoons, seagrass beds, offshore rubble areas","diet":"Algae, seagrass, small invertebrates","behavior":"Slow-moving, solitary, drifting behavior when young","social":"Solitary","group":"Bony Fishes"},{"common":"Dusky Flathead","latin":"Platycephalus fuscus","family":"Flatheads","maxsize":"80 cm","habitat":"Sandy bottoms, estuaries, coastal reefs","diet":"Small fishes, crustaceans","behavior":"Ambush predator buried in sand","social":"Solitary","group":"Bony Fishes"},{"common":"Crocodile Flathead","latin":"Papilloculiceps longiceps","family":"Flatheads","maxsize":"60 cm","habitat":"Sandy bottoms, rubble reefs","diet":"Small fishes, crustaceans","behavior":"Ambush buried predator","social":"Solitary","group":"Bony Fishes"},{"common":"Pacific Peacock Flounder","latin":"Bothus mancus","family":"Flounders","maxsize":"40.0","habitat":"Sandy reef","diet":"Fish / crustaceans","behavior":"Camouflaged ambush","social":"Solitary","group":"Bony Fish"},{"common":"Ocellated Frogfish","latin":"Antennarius ocellatus","family":"Frogfishes","maxsize":"23 cm","habitat":"Coral reefs, rubble areas and sandy bottoms","diet":"Fishes, shrimps, crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Painted Frogfish","latin":"Antennarius pictus","family":"Frogfishes","maxsize":"30 cm","habitat":"Coral reefs, rubble and sponge habitats","diet":"Fishes, crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Striated Frogfish","latin":"Antennarius striatus","family":"Frogfishes","maxsize":"25 cm","habitat":"Sandy bottoms, rubble areas and coral reefs","diet":"Fishes, shrimps, crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Warty Frogfish","latin":"Antennarius maculatus","family":"Frogfishes","maxsize":"15 cm","habitat":"Coral reefs, sponge gardens and rubble slopes","diet":"Fishes, shrimps, crustaceans","behavior":"Ambush predator, highly camouflaged","social":"Solitary","group":"Bony Fishes"},{"common":"Yellowback Fusilier","latin":"Caesio xanthonota","family":"Fusiliers","maxsize":"40.0","habitat":"Reef midwater","diet":"Zooplankton","behavior":"Continuous swimmer","social":"Large schools","group":"Bony Fish"},{"common":"Neon Fusilier","latin":"Pterocaesio tile","family":"Fusiliers","maxsize":"30.0","habitat":"Reef midwater","diet":"Zooplankton","behavior":"Schooling feeder","social":"Large schools","group":"Bony Fish"},{"common":"Gold-saddle Goatfish","latin":"Parupeneus pleurostigma","family":"Goatfishes","maxsize":"35 cm","habitat":"Sandy bottoms near reefs","diet":"Small invertebrates","behavior":"Bottom forager","social":"Pairs","group":"Bony Fishes"},{"common":"Doublestripe Goatfish","latin":"Upeneus taeniopterus","family":"Goatfishes","maxsize":"25 cm","habitat":"Sandy bottoms","diet":"Small invertebrates","behavior":"Bottom forager","social":"Schools","group":"Bony Fishes"},{"common":"Cling Goby","latin":"Pleurosicya sp.","family":"Gobies","maxsize":"5 cm","habitat":"Gorgonians, soft corals and whip corals","diet":"Zooplankton","behavior":"Micro-predator, commensal","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Peacock Grouper","latin":"Cephalopholis argus","family":"Groupers","maxsize":"50.0","habitat":"Reef lagoons","diet":"Fish / crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fish"},{"common":"Coral Grouper","latin":"Cephalopholis miniata","family":"Groupers","maxsize":"50.0","habitat":"Reef slopes","diet":"Fish / crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fish"},{"common":"Maori Cod","latin":"Variola albimarginata","family":"Groupers","maxsize":"70 cm","habitat":"Outer reef slopes","diet":"Fishes, crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Redmouth Grouper","latin":"Aethaloperca rogaa","family":"Groupers","maxsize":"90.0","habitat":"Outer reef slopes","diet":"Fish","behavior":"Top predator","social":"Solitary","group":"Bony Fish"},{"common":"Giant Grouper","latin":"Epinephelus lanceolatus","family":"Groupers","maxsize":"270.0","habitat":"Caves / reef slopes","diet":"Fish / sharks / crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fish"},{"common":"Blacktip Grouper","latin":"Epinephelus fasciatus","family":"Groupers","maxsize":"40.0","habitat":"Reef slopes","diet":"Fish / inverts","behavior":"Ambush","social":"Solitary","group":"Bony Fish"},{"common":"Honeycomb Grouper","latin":"Epinephelus merra","family":"Groupers","maxsize":"35.0","habitat":"Lagoons / reefs","diet":"Crustaceans / fish","behavior":"Ambush","social":"Solitary","group":"Bony Fish"},{"common":"Blacksaddled Coral Grouper","latin":"Plectropomus laevis","family":"Groupers","maxsize":"125 cm","habitat":"Outer reef slopes and coral reefs","diet":"Fishes, cephalopods, crustaceans","behavior":"Active predator","social":"Solitary","group":"Bony Fishes"},{"common":"Blue-spotted Grouper","latin":"Epinephelus coeruleopunctatus","family":"Groupers","maxsize":"75 cm","habitat":"Coral reefs and rocky reefs","diet":"Fishes, crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Flowery Cod","latin":"Epinephelus fuscoguttatus","family":"Groupers","maxsize":"120 cm","habitat":"Coral reefs, lagoons","diet":"Fishes, crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Sixline Soapfish","latin":"Grammistes sexlineatus","family":"Groupers & Soapfishes","maxsize":"30 cm","habitat":"Coral reefs, caves","diet":"Fishes, crustaceans","behavior":"Secretes toxin when stressed","social":"Solitary","group":"Bony Fishes"},{"common":"Oriental Flying Gurnard","latin":"Dactyloptena orientalis","family":"Gurnards","maxsize":"40.0","habitat":"Sand / reef","diet":"Fish / crustaceans","behavior":"Bottom walker","social":"Solitary","group":"Bony Fish"},{"common":"Arc-eye Hawkfish","latin":"Paracirrhites arcatus","family":"Hawkfish","maxsize":"20.0","habitat":"Coral heads","diet":"Crustaceans","behavior":"Perching ambush","social":"Solitary","group":"Bony Fish"},{"common":"Freckled Hawkfish","latin":"Paracirrhites forsteri","family":"Hawkfish","maxsize":"22.0","habitat":"Coral branches","diet":"Crustaceans","behavior":"Perching predator","social":"Solitary","group":"Bony Fish"},{"common":"Longnose Hawkfish","latin":"Oxycirrhites typus","family":"Hawkfish","maxsize":"13.0","habitat":"Soft coral / gorgonians","diet":"Small crustaceans","behavior":"Stationary ambush","social":"Solitary","group":"Bony Fish"},{"common":"Axilspot Hogfish","latin":"Bodianus axillaris","family":"Hogfishes","maxsize":"40 cm","habitat":"Reef slopes, coral gardens","diet":"Crustaceans, mollusks","behavior":"Diurnal predator","social":"Solitary","group":"Bony Fishes"},{"common":"Diana’s Hogfish","latin":"Bodianus diana","family":"Hogfishes","maxsize":"60 cm","habitat":"Outer reef slopes","diet":"Crustaceans, echinoderms","behavior":"Active predator","social":"Solitary","group":"Bony Fishes"},{"common":"Bluefin Trevally","latin":"Caranx melampygus","family":"Jacks","maxsize":"120.0","habitat":"Reef / pelagic","diet":"Fish / crustaceans","behavior":"Fast predator","social":"Schooling / solitary","group":"Bony Fish"},{"common":"Golden Trevally","latin":"Gnathanodon speciosus","family":"Jacks","maxsize":"120.0","habitat":"Sandy reef / lagoon","diet":"Invertebrates / plankton","behavior":"Opportunistic","social":"Schooling","group":"Bony Fish"},{"common":"African Pompano","latin":"Alectis ciliaris","family":"Jacks","maxsize":"165.0","habitat":"Offshore reefs","diet":"Fish / crustaceans","behavior":"Pelagic hunter","social":"Small groups","group":"Bony Fish"},{"common":"Blackbanded Amberjack","latin":"Seriolina nigrofasciata","family":"Jacks","maxsize":"70.0","habitat":"Deep reef / offshore","diet":"Fish","behavior":"Pelagic predator","social":"Schooling","group":"Bony Fish"},{"common":"Jawfishes","latin":"Opistognathus sp.","family":"Jawfishes","maxsize":"15.0","habitat":"Sandy burrows","diet":"Zooplankton","behavior":"Burrow guarding","social":"Pairs","group":"Bony Fish"},{"common":"Indian Lionfish","latin":"Pterois miles","family":"Lionfish","maxsize":"35.0","habitat":"Reef caves / slopes","diet":"Fish / crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fish"},{"common":"Twinspot Lionfish","latin":"Nemapterois biocellatus","family":"Lionfish","maxsize":"20.0","habitat":"Sandy reef / rubble","diet":"Small fish / shrimp","behavior":"Nocturnal ambush","social":"Solitary","group":"Bony Fish"},{"common":"Bluestripe Lizardfish","latin":"Synodus dermatogenys","family":"Lizardfish","maxsize":"30.0","habitat":"Sandy reef / rubble","diet":"Fish / crustaceans","behavior":"Buried ambush","social":"Solitary","group":"Bony Fish"},{"common":"Variegated Lizardfish","latin":"Synodus variegatus","family":"Lizardfish","maxsize":"40.0","habitat":"Sand / rubble","diet":"Fish","behavior":"Ambush predator","social":"Solitary","group":"Bony Fish"},{"common":"Sand Whiting Snakefish","latin":"Trachinocephalus trachinus","family":"Lizardfishes","maxsize":"40 cm","habitat":"Sandy bottoms, rubble flats and coastal reefs","diet":"Fishes, crustaceans","behavior":"Buried ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Wahoo","latin":"Acanthocybium solandri","family":"Mackerels","maxsize":"250.0","habitat":"Open ocean","diet":"Fish / squid","behavior":"Fast pelagic predator","social":"Solitary","group":"Bony Fish"},{"common":"Narrow-banded Spanish Mackerel","latin":"Scomberomorus commerson","family":"Mackerels","maxsize":"200.0","habitat":"Coastal pelagic","diet":"Fish","behavior":"Pursuit predator","social":"Small schools","group":"Bony Fish"},{"common":"Giant Moray","latin":"Gymnothorax javanicus","family":"Moray eels","maxsize":"300.0","habitat":"Reef caves","diet":"Fish / octopus","behavior":"Top predator","social":"Solitary","group":"Bony Fish"},{"common":"Yellowmargin Moray","latin":"Gymnothorax flavimarginatus","family":"Moray eels","maxsize":"240.0","habitat":"Reef crevices","diet":"Fish / crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fish"},{"common":"Undulated Moray","latin":"Gymnothorax undulatus","family":"Moray eels","maxsize":"180.0","habitat":"Reef caves","diet":"Fish / crustaceans","behavior":"Ambush","social":"Solitary","group":"Bony Fish"},{"common":"Laced Moray","latin":"Gymnothorax favagineus","family":"Moray eels","maxsize":"300.0","habitat":"Reef caves","diet":"Fish / crustaceans","behavior":"Nocturnal predator","social":"Solitary","group":"Bony Fish"},{"common":"Whitemouth Moray","latin":"Gymnothorax meleagris","family":"Moray eels","maxsize":"150.0","habitat":"Reef crevices","diet":"Fish / crustaceans","behavior":"Nocturnal","social":"Solitary","group":"Bony Fish"},{"common":"Geometric Moray","latin":"Gymnothorax griseus","family":"Moray eels","maxsize":"120.0","habitat":"Reef rubble","diet":"Fish / crustaceans","behavior":"Nocturnal","social":"Solitary","group":"Bony Fish"},{"common":"Bumphead Parrotfish","latin":"Bolbometopon muricatum","family":"Parrotfish","maxsize":"130.0","habitat":"Outer reef / slopes","diet":"Coral / algae","behavior":"Grazing schools","social":"Schooling","group":"Bony Fish"},{"common":"Indian Longnose Parrotfish","latin":"Hipposcarus harid","family":"Parrotfish","maxsize":"75.0","habitat":"Reef slopes","diet":"Algae","behavior":"Grazing","social":"Schooling","group":"Bony Fish"},{"common":"Five-saddle Parrotfish","latin":"Scarus scaber","family":"Parrotfish","maxsize":"35.0","habitat":"Reef flats / lagoons","diet":"Algae","behavior":"Grazing","social":"Solitary / small groups","group":"Bony Fish"},{"common":"Snubnose Dart","latin":"Trachinotus blochii","family":"Pompanos","maxsize":"80.0","habitat":"Sandy reef / surf zone","diet":"Invertebrates","behavior":"Active feeder","social":"Schooling","group":"Bony Fish"},{"common":"Smallspotted Dart","latin":"Trachinotus baillonii","family":"Pompanos","maxsize":"60.0","habitat":"Sandy lagoons","diet":"Invertebrates","behavior":"Foraging groups","social":"Schooling","group":"Bony Fish"},{"common":"Black-spotted Porcupinefish","latin":"Diodon liturosus","family":"Porcupinefishes","maxsize":"60 cm","habitat":"Reef flats, lagoons","diet":"Crustaceans, mollusks","behavior":"Nocturnal forager","social":"Solitary","group":"Bony Fishes"},{"common":"White-spotted Puffer","latin":"Arothron hispidus","family":"Puffers","maxsize":"50 cm","habitat":"Coral reefs, lagoons and reef flats","diet":"Mollusks, crustaceans, algae","behavior":"Solitary forager","social":"Solitary","group":"Bony Fishes"},{"common":"Map Puffer","latin":"Arothron mappa","family":"Puffers","maxsize":"65 cm","habitat":"Lagoons, seagrass beds and reefs","diet":"Mollusks, algae, invertebrates","behavior":"Slow-moving forager","social":"Solitary","group":"Bony Fishes"},{"common":"Guineafowl Puffer","latin":"Arothron meleagris","family":"Puffers","maxsize":"50 cm","habitat":"Coral reefs, lagoons","diet":"Sponges, algae, invertebrates","behavior":"Slow forager","social":"Solitary","group":"Bony Fishes"},{"common":"Blackspotted Puffer","latin":"Arothron nigropunctatus","family":"Puffers","maxsize":"30 cm","habitat":"Coral reefs, lagoons","diet":"Algae, invertebrates","behavior":"Slow forager","social":"Solitary","group":"Bony Fishes"},{"common":"Blue-spotted Puffer","latin":"Arothron caeruleopunctatus","family":"Puffers","maxsize":"40 cm","habitat":"Coral reefs, lagoons","diet":"Sponges, invertebrates","behavior":"Slow forager","social":"Solitary","group":"Bony Fishes"},{"common":"Starry Puffer","latin":"Arothron stellatus","family":"Puffers","maxsize":"120 cm","habitat":"Coral reefs, lagoons","diet":"Algae, invertebrates","behavior":"Slow forager","social":"Solitary","group":"Bony Fishes"},{"common":"Grooved Razorfish","latin":"Centriscus scutatus","family":"Razorfish","maxsize":"15.0","habitat":"Sandy reef","diet":"Zooplankton","behavior":"Vertical swimming","social":"Small groups","group":"Bony Fish"},{"common":"Sharksucker","latin":"Echeneis naucrates","family":"Remoras","maxsize":"110.0","habitat":"Reef / pelagic","diet":"Parasites / scraps","behavior":"Hitchhiking","social":"Solitary","group":"Bony Fish"},{"common":"Blackeye Sandsmelt","latin":"Parapercis hexophtalma","family":"Sandperches","maxsize":"28 cm","habitat":"Sandy bottoms near reefs","diet":"Small fishes, crustaceans","behavior":"Bottom ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Leaf Scorpionfish","latin":"Taenianotus triacanthus","family":"Scorpionfish","maxsize":"10.0","habitat":"Coral rubble","diet":"Small fish / shrimp","behavior":"Leaf mimic ambush","social":"Solitary","group":"Bony Fish"},{"common":"Weedy Scorpionfish","latin":"Rhinopias frondosa","family":"Scorpionfish","maxsize":"25.0","habitat":"Coral rubble / slopes","diet":"Fish / crustaceans","behavior":"Camouflaged ambush","social":"Solitary","group":"Bony Fish"},{"common":"Devil Scorpionfish","latin":"Scorpaenopsis diabolus","family":"Scorpionfishes","maxsize":"30.0","habitat":"Coral reefs, rubble slopes, rocky bottoms","diet":"Small fishes, shrimps, crabs","behavior":"Ambush predator, highly camouflaged, venomous","social":"Solitary","group":"Bony Fish"},{"common":"Large-scaled Scorpionfish","latin":"Scorpaenopsis macrochir","family":"Scorpionfishes","maxsize":"30 cm","habitat":"Coral rubble, reef slopes and sandy reef areas","diet":"Small fishes, shrimps, crabs","behavior":"Ambush predator, highly camouflaged, venomous","social":"Solitary","group":"Bony Fishes"},{"common":"Reef Stonefish","latin":"Synanceia verrucosa","family":"Stonefish","maxsize":"40.0","habitat":"Sandy reef / rubble","diet":"Fish / crustaceans","behavior":"Static ambush","social":"Solitary","group":"Bony Fish"},{"common":"Devil Stinger","latin":"Inimicus didactylus","family":"Stonefishes relatives","maxsize":"25.0","habitat":"Sandy bottom","diet":"Fish / crustaceans","behavior":"Ambush buried","social":"Solitary","group":"Bony Fish"},{"common":"Peter's Toby","latin":"Canthigaster petersii","family":"Sharpnose Puffers","maxsize":"12 cm","habitat":"Coral reefs and lagoons","diet":"Algae, sponges, tunicates","behavior":"Active grazer","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Smith’s Puffer","latin":"Canthigaster smithae","family":"Sharpnose Puffers","maxsize":"10 cm","habitat":"Coral reefs, lagoons","diet":"Algae, small invertebrates","behavior":"Grazing","social":"Solitary","group":"Bony Fishes"},{"common":"Blackspot Snapper","latin":"Lutjanus fulviflamma","family":"Snappers","maxsize":"40.0","habitat":"Reef lagoons","diet":"Fish / crustaceans","behavior":"Nocturnal feeder","social":"Schooling","group":"Bony Fish"},{"common":"Onespot Snapper","latin":"Lutjanus monostigma","family":"Snappers","maxsize":"35.0","habitat":"Reef slopes","diet":"Fish / inverts","behavior":"Nocturnal hunter","social":"Schooling","group":"Bony Fish"},{"common":"Shadowfin Soldierfish","latin":"Myripristis adusta","family":"Soldierfish","maxsize":"25.0","habitat":"Reef caves","diet":"Zooplankton","behavior":"Nocturnal schooling","social":"Schooling","group":"Bony Fish"},{"common":"Spotfin Squirrelfish","latin":"Neoniphon sammara","family":"Squirrelfish","maxsize":"20.0","habitat":"Reef caves","diet":"Crustaceans / fish","behavior":"Nocturnal hunter","social":"Solitary","group":"Bony Fish"},{"common":"Red Sea Moses Sole","latin":"Pardachirus marmoratus","family":"Soles","maxsize":"30.0","habitat":"Sand / lagoon","diet":"Invertebrates","behavior":"Bottom dweller","social":"Solitary","group":"Bony Fish"},{"common":"Stargazer","latin":"Uranoscopus archionema","family":"Stargazers","maxsize":"35.0","habitat":"Sand / rubble","diet":"Fish / crustaceans","behavior":"Buried ambush","social":"Solitary","group":"Bony Fish"},{"common":"Eyestripe Surgeonfish","latin":"Acanthurus dussumieri","family":"Surgeonfish","maxsize":"54.0","habitat":"Reef slopes / lagoons","diet":"Algae","behavior":"Herbivore","social":"Schooling","group":"Bony Fish"},{"common":"Powder Blue Tang","latin":"Acanthurus leucosternon","family":"Surgeonfish","maxsize":"23.0","habitat":"Reef crest / slope","diet":"Algae","behavior":"Territorial","social":"Small groups","group":"Bony Fish"},{"common":"Palette Tang","latin":"Paracanthurus hepatus","family":"Surgeonfish","maxsize":"31.0","habitat":"Reef lagoons / slopes","diet":"Plankton / algae","behavior":"Active swimmer","social":"Schooling","group":"Bony Fish"},{"common":"Indian Sailfin Tang","latin":"Zebrasoma desjardinii","family":"Surgeonfish","maxsize":"40.0","habitat":"Reef lagoons","diet":"Algae","behavior":"Grazing","social":"Loose groups","group":"Bony Fish"},{"common":"Paletail Unicornfish","latin":"Naso brevirostris","family":"Surgeonfish","maxsize":"50.0","habitat":"Reef slopes / offshore","diet":"Algae / plankton","behavior":"Open-water swimmer","social":"Schooling","group":"Bony Fish"},{"common":"Elegant Unicornfish","latin":"Naso elegans","family":"Surgeonfish","maxsize":"45.0","habitat":"Reef slopes","diet":"Algae","behavior":"Active grazer","social":"Schooling","group":"Bony Fish"},{"common":"Bignose Unicornfish","latin":"Naso vlamingii","family":"Surgeonfish","maxsize":"60.0","habitat":"Outer reef slopes","diet":"Plankton / algae","behavior":"Pelagic swimmer","social":"Schooling","group":"Bony Fish"},{"common":"Golden Sweeper","latin":"Parapriacanthus ransonneti","family":"Sweepers","maxsize":"12.0","habitat":"Reef caves","diet":"Zooplankton","behavior":"Nocturnal schooling","social":"Dense schools","group":"Bony Fish"},{"common":"Oriental Sweetlips","latin":"Plectorhinchus vittatus","family":"Sweetlips","maxsize":"72 cm","habitat":"Coral reefs, caves and lagoons","diet":"Crustaceans, worms, small fishes","behavior":"Nocturnal feeder","social":"Juveniles solitary, adults in groups","group":"Bony Fishes"},{"common":"Blackspotted Sweetlips","latin":"Plectorhinchus gaterinus","family":"Sweetlips","maxsize":"60 cm","habitat":"Reef slopes, caves","diet":"Crustaceans, worms","behavior":"Nocturnal feeder","social":"Solitary, schools","group":"Bony Fishes"},{"common":"Playfair’s Sweetlips","latin":"Plectorhinchus playfairi","family":"Sweetlips","maxsize":"60 cm","habitat":"Coral reefs, lagoons","diet":"Crustaceans, worms, small fishes","behavior":"Nocturnal feeder","social":"Solitary, schools","group":"Bony Fishes"},{"common":"Plagiodesmus Sweetlips","latin":"Plectorhinchus plagiodesmus","family":"Sweetlips","maxsize":"50 cm","habitat":"Reef slopes, coral rubble","diet":"Crustaceans, worms","behavior":"Nocturnal feeder","social":"Solitary","group":"Bony Fishes"},{"common":"Yellow-spotted Torquigener","latin":"Torquigener flavimaculosus","family":"Toadfishes & Puffers","maxsize":"15 cm","habitat":"Sandy bottoms, seagrass","diet":"Small invertebrates","behavior":"Burrowing, cryptic","social":"Solitary","group":"Bony Fishes"},{"common":"Titan Triggerfish","latin":"Balistoides viridescens","family":"Triggerfishes","maxsize":"75 cm","habitat":"Reef slopes, lagoons","diet":"Crustaceans, echinoderms","behavior":"Highly territorial","social":"Solitary","group":"Bony Fishes"},{"common":"Redtoothed Triggerfish","latin":"Odonus niger","family":"Triggerfishes","maxsize":"50 cm","habitat":"Outer reef slopes, pelagic waters","diet":"Zooplankton, crustaceans","behavior":"Planktivorous, schooling","social":"Pairs, schools","group":"Bony Fishes"},{"common":"Blackbar Triggerfish","latin":"Sufflamen chrysopterum","family":"Triggerfishes","maxsize":"25 cm","habitat":"Reef slopes, sandy patches","diet":"Crustaceans, mollusks, echinoderms","behavior":"Territorial","social":"Solitary","group":"Bony Fishes"},{"common":"Undulated Triggerfish","latin":"Balistoides undulatus","family":"Triggerfishes","maxsize":"30 cm","habitat":"Reef flats, lagoons","diet":"Mollusks, crustaceans","behavior":"Highly territorial","social":"Solitary","group":"Bony Fishes"},{"common":"Blackbar Triggerfish","latin":"Sufflamen bursa","family":"Triggerfishes","maxsize":"20 cm","habitat":"Reef flats, lagoons","diet":"Crustaceans, mollusks","behavior":"Territorial","social":"Solitary","group":"Bony Fishes"},{"common":"Blue Triggerfish","latin":"Pseudobalistes fuscus (juvenile / blue phase)","family":"Triggerfishes","maxsize":"55 cm","habitat":"Coral reefs, lagoons, reef flats and outer reef slopes","diet":"Sea urchins, crustaceans, mollusks, coral","behavior":"increase territoriality with age; benthic forager","social":"Solitary","group":"Bony Fishes"},{"common":"Clown Triggerfish","latin":"Balistoides conspicillum","family":"Triggerfishes","maxsize":"50 cm","habitat":"Outer reef slopes","diet":"Mollusks, echinoderms","behavior":"Territorial","social":"Solitary","group":"Bony Fishes"},{"common":"Chinese Trumpetfish","latin":"Aulostomus chinensis","family":"Trumpetfishes","maxsize":"80 cm","habitat":"Coral reefs and reef slopes","diet":"Small fishes, crustaceans","behavior":"Stealth predator","social":"Solitary","group":"Bony Fishes"},{"common":"Dogtooth Tuna","latin":"Gymnosarda unicolor","family":"Tunas","maxsize":"230.0","habitat":"Deep reef / pelagic","diet":"Fish / squid","behavior":"High-speed hunter","social":"Solitary","group":"Bony Fish"},{"common":"Twinspot Waspfish","latin":"Ablabys binotatus","family":"Waspfishes","maxsize":"15 cm","habitat":"Seagrass beds and sandy reef areas","diet":"Small crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Napoleon Wrasse","latin":"Cheilinus undulatus","family":"Wrasses","maxsize":"230.0","habitat":"Reef slopes / lagoons","diet":"Mollusks / crustaceans / fish","behavior":"Slow cruising","social":"Solitary","group":"Bony Fish"},{"common":"Bluestreak Cleaner Wrasse","latin":"Labroides dimidiatus","family":"Wrasses","maxsize":"11.0","habitat":"Cleaning stations","diet":"Parasites","behavior":"Cleaning behavior","social":"Pairs","group":"Bony Fish"},{"common":"Goldbar Wrasse","latin":"Thalassoma hebraicum","family":"Wrasses","maxsize":"25.0","habitat":"Reef crest","diet":"Crustaceans","behavior":"Active swimmer","social":"Schooling","group":"Bony Fish"},{"common":"Slingjaw Wrasse","latin":"Epibulus insidiator","family":"Wrasses","maxsize":"90.0","habitat":"Reef lagoons / slopes","diet":"Fish / invertebrates","behavior":"Ambush feeder","social":"Solitary","group":"Bony Fish"},{"common":"Linedcheek Wrasse","latin":"Oxycheilinus digramma","family":"Wrasses","maxsize":"70.0","habitat":"Reef slopes","diet":"Fish / crustaceans","behavior":"Active predator","social":"Solitary","group":"Bony Fish"},{"common":"Bluespotted Wrasse","latin":"Anampses caeruleopunctatus","family":"Wrasses","maxsize":"25.0","habitat":"Coral reef zones","diet":"Invertebrates","behavior":"Foraging pairs","social":"Paired","group":"Bony Fish"},{"common":"Checkerboard Wrasse","latin":"Halichoeres hortulanus","family":"Wrasses","maxsize":"25.0","habitat":"Sandy reef / rubble","diet":"Invertebrates","behavior":"Active forager","social":"Solitary","group":"Bony Fish"},{"common":"Redbreasted Wrasse","latin":"Cheilinus fasciatus","family":"Wrasses","maxsize":"40 cm","habitat":"Coral reefs, rubble slopes","diet":"Crustaceans, mollusks","behavior":"Active predator","social":"Solitary","group":"Bony Fishes"},{"common":"Banded Wrasse","latin":"Hemigymnus fasciatus","family":"Wrasses","maxsize":"80 cm","habitat":"Reef flats, lagoons","diet":"Mollusks, crustaceans","behavior":"Foraging predator","social":"Solitary","group":"Bony Fishes"},{"common":"Green Birdmouth Wrasse","latin":"Gomphosus caeruleus","family":"Birdmouth Wrasses","maxsize":"32 cm","habitat":"Coral reefs, reef slopes, lagoon edges","diet":"Small crustaceans, mollusks, worms","behavior":"Active diurnal forager","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Scarface Wrasse","latin":"Novaculoides macrolepidotus","family":"Wrasses","maxsize":"15 cm","habitat":"Seagrass, sandy reefs","diet":"Small invertebrates","behavior":"Cryptic, bottom-dwelling","social":"Solitary","group":"Bony Fishes"},{"common":"Ayliffe’s Goatfish","latin":"Mulloidichthys ayliffe","family":"Goatfishes","maxsize":"35 cm","habitat":"Sandy bottoms near reefs","diet":"Small benthic invertebrates","behavior":"Active bottom forager","social":"Pairs, small groups","group":"Bony Fishes"},{"common":"Spotted Garden Eel","latin":"Heteroconger hassi","family":"Garden Eels","maxsize":"40 cm","habitat":"Sandy slopes near reef drop-offs, clear current zones","diet":"Plankton","behavior":"Colonial burrow-dwelling, sways in current, retracts into sand","social":"Colonial","group":"Bony Fishes"},{"common":"Fuzzy dwarf Lionfish","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Giant FrogFish","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Moorish Idol","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Picasso triggerfish","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Queen Triggerfish","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Centropyge fisheri","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Callechelys marmorata","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Blacktail snapper","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Maori snapper","latin":"","family":"","maxsize":"","habitat":"","diet":"","behavior":"","social":"","group":""},{"common":"Peacock-tail Anemone Shrimp","latin":"Ancylocaris brevicarpalis","family":"Shrimp","maxsize":"6.0","habitat":"Anemones","diet":"Plankton","behavior":"Symbiotic cleaning","social":"Pairs","group":"Marine Invertebrates"},{"common":"Banded Coral Shrimp","latin":"Stenopus hispidus","family":"Cleaner shrimp","maxsize":"8.0","habitat":"Reef crevices","diet":"Parasites","behavior":"Cleaning behavior","social":"Pairs","group":"Marine Invertebrates"},{"common":"Cleaner Shrimp","latin":"Lysmata amboinensis","family":"Cleaner shrimp","maxsize":"5.0","habitat":"Reef stations","diet":"Parasites","behavior":"Cleaning mutualism","social":"Groups","group":"Marine Invertebrates"},{"common":"Loch's Chromodoris","latin":"Chromodoris lochi","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef rubble","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Streaked Chromodoris","latin":"Chromodoris strigata","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef slope","diet":"Sponges","behavior":"Aposematic","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Caramel Nudibranch","latin":"Glossodoris rufomarginata","family":"Nudibranchs","maxsize":"6.0","habitat":"Reef slope","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Glossodoris pallida","latin":"Glossodoris pallida","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef rubble","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Ardeadoris angustolutea","latin":"Ardeadoris angustolutea","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Diversidoris crocea","latin":"Diversidoris crocea","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Goniobranchus albonares","latin":"Goniobranchus albonares","family":"Nudibranchs","maxsize":"3.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Goniobranchus cavae","latin":"Goniobranchus cavae","family":"Nudibranchs","maxsize":"3.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Goniobranchus conchyliatus","latin":"Goniobranchus conchyliatus","family":"Nudibranchs","maxsize":"3.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Goniobranchus fidelis","latin":"Goniobranchus fidelis","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Goniobranchus geminus","latin":"Goniobranchus geminus","family":"Nudibranchs","maxsize":"3.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Goniobranchus geometricus","latin":"Goniobranchus geometricus","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Hypselodoris emma","latin":"Hypselodoris emma","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Hypselodoris maculosa","latin":"Hypselodoris maculosa","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Hypselodoris pulchella","latin":"Hypselodoris pulchella","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Hypselodoris regina","latin":"Hypselodoris regina","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Mexichromis mariei","latin":"Mexichromis mariei","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Miamira miamirana","latin":"Miamira miamirana","family":"Nudibranchs","maxsize":"6.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Miamira sinuata","latin":"Miamira sinuata","family":"Nudibranchs","maxsize":"6.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Miamira striata","latin":"Miamira striata","family":"Nudibranchs","maxsize":"6.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Thorunna australis","latin":"Thorunna australis","family":"Nudibranchs","maxsize":"3.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Thorunna punicea","latin":"Thorunna punicea","family":"Nudibranchs","maxsize":"3.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Hexabranchus lacer","latin":"Hexabranchus lacer","family":"Nudibranchs","maxsize":"15.0","habitat":"Reef","diet":"Sponges","behavior":"Swimming dorid","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Discodoris boholiensis","latin":"Discodoris boholiensis","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Halgerda indotessellata","latin":"Halgerda indotessellata","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Halgerda nuarrensis","latin":"Halgerda nuarrensis","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Halgerda toliara","latin":"Halgerda toliara","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Jorunna funebris","latin":"Jorunna funebris","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Fuzzy crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Jorunna rubescens","latin":"Jorunna rubescens","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Fuzzy crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Taringa sublutea","latin":"Taringa sublutea","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Aegires villosus","latin":"Aegires villosus","family":"Nudibranchs","maxsize":"2.0","habitat":"Reef","diet":"Sponges","behavior":"Small crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Notodoris minor","latin":"Notodoris minor","family":"Nudibranchs","maxsize":"3.0","habitat":"Reef","diet":"Sponges","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Trapania naeva","latin":"Trapania naeva","family":"Nudibranchs","maxsize":"2.0","habitat":"Reef","diet":"Hydroids","behavior":"Small crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Gymnodoris aurita","latin":"Gymnodoris aurita","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Small invertebrates","behavior":"Active hunter","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Gymnodoris ceylonica","latin":"Gymnodoris ceylonica","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Small invertebrates","behavior":"Active hunter","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Gymnodoris impudica","latin":"Gymnodoris impudica","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Small invertebrates","behavior":"Active hunter","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Nembrotha kubaryana","latin":"Nembrotha kubaryana","family":"Nudibranchs","maxsize":"8.0","habitat":"Reef","diet":"Tunicates","behavior":"Active predator","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Nembrotha lineolata","latin":"Nembrotha lineolata","family":"Nudibranchs","maxsize":"7.0","habitat":"Reef","diet":"Tunicates","behavior":"Predator","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Nembrotha milleri","latin":"Nembrotha milleri","family":"Nudibranchs","maxsize":"10.0","habitat":"Reef","diet":"Tunicates","behavior":"Active hunter","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Tambja affinis","latin":"Tambja affinis","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Bryozoans","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Tambja morosa","latin":"Tambja morosa","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Bryozoans","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Tambja olivaria","latin":"Tambja olivaria","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Bryozoans","behavior":"Slow crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Phyllidia varicosa","latin":"Phyllidia varicosa","family":"Nudibranchs","maxsize":"6.0","habitat":"Reef","diet":"Sponges","behavior":"Toxic crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Phyllidia undula","latin":"Phyllidia undula","family":"Nudibranchs","maxsize":"5.0","habitat":"Reef","diet":"Sponges","behavior":"Toxic crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Phyllidiella meandrina","latin":"Phyllidiella meandrina","family":"Nudibranchs","maxsize":"4.0","habitat":"Reef","diet":"Sponges","behavior":"Toxic crawler","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Costasiella kuroshimae","latin":"Costasiella kuroshimae","family":"Sea slug","maxsize":"1.0","habitat":"Seagrass","diet":"Algae","behavior":"Grazing","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Glaucus atlanticus","latin":"Glaucus atlanticus","family":"Pelagic slug","maxsize":"4.0","habitat":"Pelagic surface","diet":"Stinging plankton","behavior":"Drifting predator","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Pseudoceros bifurcus","latin":"Pseudoceros bifurcus","family":"Flatworm","maxsize":"3.0","habitat":"Reef surface","diet":"Small invertebrates","behavior":"Gliding predator","social":"Solitary","group":"Nudibranchs, Sea Slugs & Flatworms"},{"common":"Green Bubble Snail","latin":"Oxynoe viridis","family":"Sacoglossan Sea Slugs","maxsize":"2 cm","habitat":"Seagrass beds (especially Halimeda)","diet":"Algae (Halimeda sap sap-feeding)","behavior":"Diurnal grazer","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Melibe Nudibranch","latin":"Melibe viridis","family":"Nudibranchs","maxsize":"12 cm","habitat":"Soft coral reefs, rubble and sandy lagoons","diet":"Small crustaceans (plankton capture)","behavior":"Active nocturnal hunter","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Scripted Bubble Slug","latin":"Micromelo scriptus","family":"Bubble Slugs","maxsize":"5 cm","habitat":"Sandy bottoms, rubble reefs","diet":"Foraminiferans, small invertebrates","behavior":"Active crawler","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Tritonia spp.","latin":"Tritonia sp.","family":"Nudibranchs","maxsize":"8 cm","habitat":"Soft coral reefs (especially gorgonians)","diet":"Soft corals (octocorals)","behavior":"Specialist feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Stiliger spp.","latin":"Stiliger sp.","family":"Sacoglossan Sea Slugs","maxsize":"1.5 cm","habitat":"Algae-covered reefs, seagrass beds","diet":"Algae (siphonous algae)","behavior":"Grazing, cryptic","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Starry Bornella","latin":"Bornella stellifer","family":"Nudibranchs","maxsize":"6 cm","habitat":"Coral reefs, rubble slopes, hydroid-rich areas","diet":"Hydroids","behavior":"Carnivorous, nocturnal hunter","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Hancock’s Nudibranch","latin":"Hancockia californica","family":"Nudibranchs","maxsize":"2 cm","habitat":"Hydroid colonies on rocky reefs and coral rubble","diet":"Hydroids","behavior":"Specialist feeder, cryptic and slow-moving","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Vermiform Nudibranch","latin":"Lomanotus vermiformis","family":"Nudibranchs","maxsize":"4 cm","habitat":"Gorgonian coral reefs","diet":"Hydroids on soft corals","behavior":"Specialist feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Cryptic Solar Nudibranch","latin":"Phyllodesmium crypticum","family":"Aeolid Nudibranchs","maxsize":"5 cm","habitat":"Soft coral reefs (especially Xeniidae), rubble zones","diet":"Soft corals (zooxanthellae-containing tissues), symbiotic feeding","behavior":"Photosymbiotic, slow-moving, cryptic","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Julie's Aeolid","latin":"Pleurolidia juliae","family":"Nudibranchs","maxsize":"3 cm","habitat":"Hydroid-covered reef areas","diet":"Hydroids","behavior":"Cryptic hunter","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Blue Dragon Nudibranch","latin":"Pteraeolidia semperi","family":"Nudibranchs","maxsize":"6 cm","habitat":"Coral reefs, hydroid fields","diet":"Hydroids, symbiotic algae","behavior":"Photosymbiotic","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Black-spotted Leaf Slug","latin":"Cyerce nigricans","family":"Sacoglossan Sea Slugs","maxsize":"2.5 cm","habitat":"Seagrass beds, algae-covered reef flats and lagoons","diet":"Siphonous algae (sap-sucking herbivore)","behavior":"Diurnal, grazing, highly camouflaged","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Regal Chromodoris","latin":"Hypselodoris regina","family":"Nudibranchs","maxsize":"4 cm","habitat":"Coral reefs, rubble slopes","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Mandapam Sea Slug","latin":"Annulorhina mandapamensis","family":"Nudibranchs","maxsize":"2 cm","habitat":"Hydroid colonies","diet":"Hydroids","behavior":"Cryptic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Northern Aeolid","latin":"Coryphella trophina","family":"Aeolid Nudibranchs","maxsize":"4 cm","habitat":"Cold to temperate rocky reefs, kelp forests","diet":"Hydroids","behavior":"Carnivorous, active crawler","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Bryozoan Aeolid","latin":"Janolus tricellariodes","family":"Nudibranchs","maxsize":"3.5 cm","habitat":"Coral reefs, rubble slopes, bryozoan-covered areas","diet":"Bryozoans (especially Tricellaria spp.)","behavior":"Cryptic specialist feeder, slow-moving","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Indian Nudibranch","latin":"Caloria indica","family":"Aeolid Nudibranchs","maxsize":"4 cm","habitat":"Coral reefs, rubble and hydroid-covered areas","diet":"Hydroids","behavior":"Carnivorous (hydroid feeder)","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Variable Chromodoris","latin":"Hypselodoris maculosa","family":"Nudibranchs","maxsize":"5 cm","habitat":"Coral reefs and rubble slopes","diet":"Sponges","behavior":"Aposematic sponge feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Warty Sea Slug","latin":"Coriocella hibyae (Coriocella slug)","family":"Sea Slugs","maxsize":"6 cm","habitat":"Coral reefs, sandy rubble areas","diet":"Sponges, detritus","behavior":"Cryptic crawler","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Psychedelic Slug","latin":"Sagaminopteron psychedelicum","family":"Headshield Slugs","maxsize":"3 cm","habitat":"Sandy rubble, coral reef edges","diet":"Foraminiferans, detritus","behavior":"Nocturnal crawler","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Bicorned Headshield Slug","latin":"Gastropteron bicornutum","family":"Headshield Slugs","maxsize":"3 cm","habitat":"Sandy bottoms, seagrass edges","diet":"Detritus, foraminiferans","behavior":"Nocturnal swimmer","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Milk Slug","latin":"Pleurobranchus mamillatus","family":"Sidegill Slugs","maxsize":"12 cm","habitat":"Coral reefs, rubble and sandy areas","diet":"Sponges, tunicates","behavior":"Nocturnal feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Rose Sea Slug","latin":"Marianina rosea","family":"Nudibranchs","maxsize":"2.5 cm","habitat":"Hydroid-rich coral reefs","diet":"Hydroids","behavior":"Cryptic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Sand Aeolid","latin":"Cerberilla affinis","family":"Nudibranchs","maxsize":"5 cm","habitat":"Sandy bottoms near reefs","diet":"Burrowing sea anemones","behavior":"Sand-diving predator","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Miamira Nudibranch","latin":"Miamira miamirana","family":"Nudibranchs","maxsize":"7 cm","habitat":"Coral reefs, sponge-rich areas","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Warty Nudibranch","latin":"Aegires villosus","family":"Nudibranchs","maxsize":"2 cm","habitat":"Coral reefs, rubble, sponge-rich areas","diet":"Sponges","behavior":"Cryptic sponge feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Orange Dorid","latin":"Diversidoris crocea","family":"Nudibranchs","maxsize":"4 cm","habitat":"Coral reefs, sponge-covered rubble","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"White Dermatobranchus","latin":"Dermatobranchus albus","family":"Nudibranchs","maxsize":"3 cm","habitat":"Sandy rubble, coral reef edges","diet":"Cnidarians (soft corals, hydroids)","behavior":"Cryptic crawler, nocturnal","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Doto Nudibranch","latin":"Doto ussi","family":"Nudibranchs","maxsize":"2 cm","habitat":"Hydroid colonies","diet":"Hydroids","behavior":"Specialist feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Sinuous Miamira","latin":"Miamira sinuata","family":"Nudibranchs","maxsize":"7 cm","habitat":"Coral reefs, sponge-rich slopes","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Speckled Eubranchus","latin":"Eubranchus ocellatus","family":"Nudibranchs","maxsize":"2.5 cm","habitat":"Hydroid-covered reefs","diet":"Hydroids","behavior":"Cryptic predator","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Blue Armina","latin":"Armina semperi","family":"Nudibranchs","maxsize":"8 cm","habitat":"Sandy reef slopes, rubble areas","diet":"Cnidarians (sea pens, soft corals)","behavior":"Nocturnal crawler","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"False Notodoris","latin":"Notodoris minor","family":"Nudibranchs","maxsize":"5 cm","habitat":"Spongy coral reefs","diet":"Sponges","behavior":"Specialist sponge feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Marie's Chromodoris","latin":"Mexichromis mariei","family":"Nudibranchs","maxsize":"4 cm","habitat":"Coral reefs, sponge-rich rubble","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"White-margined Chromodoris","latin":"Goniobranchus albonares","family":"Nudibranchs","maxsize":"4 cm","habitat":"Coral reefs, rubble slopes","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Cave Chromodoris","latin":"Goniobranchus cavae","family":"Nudibranchs","maxsize":"4 cm","habitat":"Coral reefs, shaded caves","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Asmusi Cerberilla","latin":"Cerberilla asamusiensis","family":"Nudibranchs","maxsize":"5 cm","habitat":"Sandy bottoms near reefs","diet":"Burrowing sea anemones","behavior":"Sand-diving predator","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Nungun Aeolid","latin":"Sakuraeolis nungunoides","family":"Aeolid Nudibranchs","maxsize":"3 cm","habitat":"Hydroid-rich coral reefs","diet":"Hydroids","behavior":"Cryptic predator","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Conch Nudibranch","latin":"Goniobranchus conchyliatus","family":"Nudibranchs","maxsize":"5 cm","habitat":"Coral reefs, rubble slopes","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Fucata Chromodoris","latin":"Hypselodoris fucata","family":"Nudibranchs","maxsize":"4 cm","habitat":"Coral reefs, sponge areas","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Toliara Halgerda","latin":"Halgerda toliara","family":"Nudibranchs","maxsize":"6 cm","habitat":"Coral reefs, rubble slopes","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Two-tone Samla","latin":"Samla bicolor","family":"Aeolid Nudibranchs","maxsize":"4 cm","habitat":"Hydroid-covered reefs","diet":"Hydroids","behavior":"Cryptic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Red-line Aeolid","latin":"Coryphellina rubrolineata","family":"Aeolid Nudibranchs","maxsize":"5 cm","habitat":"Coral reefs, hydroid fields","diet":"Hydroids","behavior":"Active predator","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"African Cerberilla","latin":"Cerberilla africana","family":"Nudibranchs","maxsize":"6 cm","habitat":"Sandy bottoms near reefs","diet":"Burrowing sea anemones","behavior":"Sand-diving predator","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Striped Samla","latin":"Samla bilas","family":"Aeolid Nudibranchs","maxsize":"4 cm","habitat":"Hydroid-rich reef areas","diet":"Hydroids","behavior":"Cryptic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Pale Glossodoris","latin":"Glossodoris pallida","family":"Nudibranchs","maxsize":"5 cm","habitat":"Coral reefs, sponge areas","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Pustulose Dermatobranchus","latin":"Dermatobranchus pustulosus","family":"Nudibranchs","maxsize":"4 cm","habitat":"Sandy rubble, coral edges","diet":"Cnidarians, soft corals","behavior":"Cryptic crawler","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Indo-Pacific Halgerda","latin":"Halgerda indotessellata","family":"Nudibranchs","maxsize":"6 cm","habitat":"Coral reefs, rubble slopes","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Rehder’s Sea Slug","latin":"Noumeaella rehderi","family":"Nudibranchs","maxsize":"3 cm","habitat":"Coral reefs, hydroid patches","diet":"Hydroids","behavior":"Cryptic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Lemur Nudibranch","latin":"Plocamopherus lemur","family":"Nudibranchs","maxsize":"6 cm","habitat":"Coral reefs, sponge and hydroid areas","diet":"Sponges, hydroids","behavior":"Bioluminescent, active crawler","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Nuarru Halgerda","latin":"Halgerda nuarrensis","family":"Nudibranchs","maxsize":"5 cm","habitat":"Coral reefs, rubble slopes","diet":"Sponges","behavior":"Aposematic feeder","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Exotic Aeolid","latin":"Coryphellina exoptata","family":"Aeolid Nudibranchs","maxsize":"5 cm","habitat":"Coral reefs, hydroid fields","diet":"Hydroids","behavior":"Active predator","social":"Solitary","group":"Marine Invertebrates (Nudibranchs, Sea Slugs & Flatworms)"},{"common":"Whale Shark","latin":"Rhincodon typus","family":"Whale Sharks","maxsize":"1200.0","habitat":"Pelagic / reef edges","diet":"Plankton","behavior":"Filter feeder","social":"Solitary","group":"Shark and Rays"},{"common":"Grey Reef Shark","latin":"Carcharhinus amblyrhynchos","family":"Reef Sharks","maxsize":"180.0","habitat":"Outer reef","diet":"Fish / cephalopods","behavior":"Active predator","social":"Small groups","group":"Shark and Rays"},{"common":"Silvertip Shark","latin":"Carcharhinus albimarginatus","family":"Reef Sharks","maxsize":"300.0","habitat":"Outer reef / drop-offs","diet":"Fish","behavior":"Pelagic predator","social":"Solitary","group":"Shark and Rays"},{"common":"Bull Shark","latin":"Carcharhinus leucas","family":"Reef Sharks","maxsize":"320.0","habitat":"Estuary / coastal","diet":"Fish / mammals","behavior":"Opportunistic","social":"Solitary","group":"Shark and Rays"},{"common":"Whitetip Reef Shark","latin":"Triaenodon obesus","family":"Reef Sharks","maxsize":"160.0","habitat":"Reef caves","diet":"Fish / crustaceans","behavior":"Nocturnal hunter","social":"Solitary","group":"Shark and Rays"},{"common":"White-spotted Eagle Ray","latin":"Aetobatus ocellatus","family":"Eagle Rays","maxsize":"240.0","habitat":"Sandy reef","diet":"Mollusks / crustaceans","behavior":"Bottom forager","social":"Solitary","group":"Shark and Rays"},{"common":"Spotted Eagle Ray","latin":"Aetobatus narinari","family":"Eagle Rays","maxsize":"300.0","habitat":"Reef / sand","diet":"Crustaceans","behavior":"Gliding feeder","social":"Solitary","group":"Shark and Rays"},{"common":"Bluespotted Fantail Ray","latin":"Taeniura lymma","family":"Stingrays","maxsize":"70.0","habitat":"Sandy reef","diet":"Mollusks / worms","behavior":"Bottom forager","social":"Solitary","group":"Shark and Rays"},{"common":"Reticulate Whipray","latin":"Himantura uarnak","family":"Stingrays","maxsize":"180.0","habitat":"Sand flats","diet":"Mollusks / crustaceans","behavior":"Buried ambush","social":"Solitary","group":"Shark and Rays"},{"common":"Reef Manta Ray","latin":"Mobula alfredi","family":"Mantas","maxsize":"500.0","habitat":"Reef cleaning stations","diet":"Plankton","behavior":"Filter feeder","social":"Solitary / groups","group":"Shark and Rays"},{"common":"Spinetail Devil Ray","latin":"Mobula mobular","family":"Devil Rays","maxsize":"350.0","habitat":"Pelagic","diet":"Plankton","behavior":"Active filter feeding","social":"Small groups","group":"Shark and Rays"},{"common":"Cownose Ray","latin":"Rhinoptera jayakari","family":"Cownose Rays","maxsize":"200.0","habitat":"Coastal bays","diet":"Mollusks","behavior":"Schooling feeder","social":"School","group":"Shark and Rays"},{"common":"Guitarfish","latin":"Rhynchobatus australiae","family":"Guitarfish","maxsize":"300.0","habitat":"Sandy reef","diet":"Mollusks / fish","behavior":"Bottom ambush","social":"Solitary","group":"Shark and Rays"},{"common":"Torpedo Ray","latin":"Torpedo fuscomaculata","family":"Electric Rays","maxsize":"120.0","habitat":"Sandy reef","diet":"Fish","behavior":"Ambush predator","social":"Solitary","group":"Shark and Rays"},{"common":"Mangrove Whipray","latin":"Urogymnus granulatus","family":"Whiprays","maxsize":"140 cm","habitat":"Sandy bottoms, estuaries, mangroves and shallow reefs","diet":"Benthic invertebrates (crustaceans, worms, mollusks)","behavior":"Bottom feeder, slow-moving","social":"Solitary","group":"Cartilaginous Fishes (Sharks, Rays & Chimaeras)"},{"common":"Zanzibar Shovelnose Ray","latin":"Acroteriobatus zanzibarensis","family":"Guitarfishes","maxsize":"120 cm","habitat":"Sandy bottoms near reefs and coastal waters","diet":"Crustaceans, small fishes, worms","behavior":"Bottom ambush forager","social":"Solitary","group":"Cartilaginous Fishes (Sharks, Rays & Chimaeras)"},{"common":"Bluespotted Eagle Ray","latin":"Taeniurops meyeni","family":"Eagle Rays","maxsize":"330 cm","habitat":"Coral reefs, lagoons, outer reef slopes","diet":"Mollusks, crustaceans, small fishes","behavior":"Active swimmer, benthic forager","social":"Solitary, pairs","group":"Cartilaginous Fishes (Sharks, Rays & Chimaeras)"},{"common":"Broad Cowtail Ray","latin":"Pastinachus ater","family":"Whiprays","maxsize":"180 cm","habitat":"Sandy bottoms, lagoons, estuaries, coastal reefs","diet":"Benthic invertebrates (worms, crustaceans, mollusks)","behavior":"Bottom-feeding, slow cruising","social":"Solitary","group":"Cartilaginous Fishes (Sharks, Rays & Chimaeras)"},{"common":"Oman Cownose Ray","latin":"Rhinoptera jayakari","family":"Cownose Rays","maxsize":"100 cm","habitat":"Coastal waters, sandy bays, shallow reef flats","diet":"Mollusks, crustaceans (durophagous feeder)","behavior":"Schooling, active swimmer","social":"Schools","group":"Cartilaginous Fishes (Sharks, Rays & Chimaeras)"},{"common":"Sharpnose Whipray","latin":"Maculabatis ambigua","family":"Whiprays","maxsize":"120 cm","habitat":"Sandy bottoms, seagrass beds, lagoons","diet":"Benthic invertebrates (crustaceans, worms)","behavior":"Bottom-feeding, cryptic","social":"Solitary","group":"Cartilaginous Fishes (Sharks, Rays & Chimaeras)"},{"common":"Jenkins’ Whipray","latin":"Pateobatis jenkinsii","family":"Whiprays","maxsize":"200 cm","habitat":"Sandy and muddy bottoms, coastal reefs","diet":"Crustaceans, mollusks, small fishes","behavior":"Bottom ambush feeder","social":"Solitary","group":"Cartilaginous Fishes (Sharks, Rays & Chimaeras)"},{"common":"Day Octopus","latin":"Octopus cyanea","family":"Octopus","maxsize":"80.0","habitat":"Reef rubble","diet":"Crustaceans / fish","behavior":"Active hunter","social":"Solitary","group":"Marine Invertebrates"},{"common":"Mimic Octopus","latin":"Thaumoctopus mimicus","family":"Octopus","maxsize":"60.0","habitat":"Sand flats","diet":"Fish / crustaceans","behavior":"Adaptive mimic","social":"Solitary","group":"Marine Invertebrates"},{"common":"Broadclub Cuttlefish","latin":"Ascarosepion latimanus","family":"Cuttlefish","maxsize":"50.0","habitat":"Reef / sand","diet":"Fish / crustaceans","behavior":"Camouflage hunter","social":"Solitary","group":"Marine Invertebrates"},{"common":"Bigfin Reef Squid","latin":"Sepioteuthis lessoniana","family":"Squid","maxsize":"40.0","habitat":"Water column","diet":"Fish / plankton","behavior":"Schooling hunter","social":"School","group":"Marine Invertebrates"},{"common":"Bobtail Squid","latin":"Sepiolidae sp.","family":"Bobtail Squid","maxsize":"5.0","habitat":"Sandy bottom","diet":"Plankton","behavior":"Buried nocturnal","social":"Solitary","group":"Marine Invertebrates"},{"common":"Mototi Octopus","latin":"Amphioctopus mototi","family":"Octopuses","maxsize":"40 cm","habitat":"Coral reefs, rubble slopes and sandy reef areas","diet":"Crustaceans, mollusks, small fishes","behavior":"Nocturnal, cryptic","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Ornate Octopus","latin":"Pinnoctopus ornatus","family":"Octopuses","maxsize":"100 cm","habitat":"Coral reefs, lagoons and sandy bottoms","diet":"Crustaceans, mollusks, fishes","behavior":"Nocturnal predator","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Small Giant Clam","latin":"Tridacna maxima","family":"Giant Clams","maxsize":"35 cm","habitat":"Coral reefs, lagoon reefs, reef flats in shallow clear water","diet":"Plankton, dissolved nutrients via symbiotic zooxanthellae","behavior":"Sessile, photosymbiotic filter feeder embedded in coral rock","social":"Solitary","group":"Mollusks (Bivalves)"},{"common":"Long-arm Octopus","latin":"Macrotritopus defilippi","family":"Octopuses","maxsize":"15 cm","habitat":"Sandy bottoms, seagrass beds, shallow reef flats","diet":"Crustaceans, small mollusks","behavior":"Highly cryptic, mimics flounder when swimming, buries in sand","social":"Solitary","group":"Marine Invertebrates (Octopuses & Cephalopods)"},{"common":"Coconut Octopus","latin":"Amphioctopus marginatus","family":"Octopuses","maxsize":"15 cm","habitat":"Sandy bottoms, rubble, seagrass beds and shell debris areas","diet":"Crustaceans, small mollusks","behavior":"Tool-using, carries shells/coconut shells for shelter, highly intelligent","social":"Solitary","group":"Marine Invertebrates (Octopuses & Cephalopods)"},{"common":"Sea Star Shrimp","latin":"Zenopontonia soror","family":"Cleaner Shrimps","maxsize":"1.5 cm","habitat":"Coral reefs, always associated with sea stars","diet":"Ectoparasites, mucus, detritus","behavior":"Obligate commensal on sea stars, highly cryptic","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Emperor Shrimp","latin":"Periclimenes imperator","family":"Cleaner Shrimps","maxsize":"1.5 cm","habitat":"Coral reefs, sea cucumbers and nudibranch hosts","diet":"Ectoparasites, mucus, organic particles","behavior":"Obligate commensal, rides hosts","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Harlequin Swimming Crab","latin":"Lissocarcinus orbicularis","family":"Swimming Crabs","maxsize":"2.5 cm","habitat":"Coral reefs, lagoons, often on sea cucumbers","diet":"Ectoparasites, mucus, detritus","behavior":"Obligate commensal, slow-moving","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Anker's Wire Coral Shrimp","latin":"Pontonides ankeri","family":"Commensal Shrimps","maxsize":"2 cm","habitat":"Living on wire corals and gorgonians","diet":"Plankton, detritus","behavior":"Cryptic, nocturnal","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Velvet Shrimp","latin":"Metapenaeopsis sp.","family":"Penaeid Shrimps","maxsize":"8 cm","habitat":"Sandy and muddy bottoms near reefs","diet":"Small invertebrates, detritus","behavior":"Nocturnal","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Marble Shrimp","latin":"Saron marmoratus","family":"Marble Shrimps","maxsize":"7 cm","habitat":"Coral reefs, caves and crevices","diet":"Detritus, algae, small invertebrates","behavior":"Nocturnal","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Spotted Porcelain Crab","latin":"Neopetrolisthes maculatus","family":"Porcelain Crabs","maxsize":"4 cm","habitat":"Living among sea anemone tentacles","diet":"Plankton","behavior":"Commensal, filter feeder","social":"Pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Decorator Spider Crab","latin":"Huenia heraldica","family":"Spider Crabs","maxsize":"5 cm","habitat":"Seagrass beds and algae-covered reefs","diet":"Algae, detritus","behavior":"Camouflaged, cryptic","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Anemone Hermit Crab","latin":"Dardanus pedunculatus","family":"Hermit Crabs","maxsize":"12 cm","habitat":"Coral reefs and sandy areas","diet":"Detritus, carrion, algae","behavior":"Scavenger","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Skeleton Shrimp","latin":"Caprellidae","family":"Skeleton Shrimps","maxsize":"3 cm","habitat":"Hydroids, algae, soft corals and seagrass","diet":"Plankton, detritus","behavior":"Cryptic","social":"Small groups","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Harlequin Shrimp","latin":"Hymenocera picta","family":"Harlequin Shrimps","maxsize":"5 cm","habitat":"Coral reefs and rubble areas","diet":"Sea stars","behavior":"Predatory, highly specialized","social":"Pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Scarlet/Skunk Cleaner Shrimp","latin":"Lysmata amboinensis","family":"Cleaner Shrimps","maxsize":"5 cm","habitat":"Coral reefs, cleaning stations","diet":"Parasites, dead tissue, mucus","behavior":"Obligate cleaner, diurnal","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Banded Coral Shrimp","latin":"Stenopus hispidus","family":"Boxer Shrimps","maxsize":"6 cm","habitat":"Reef caves, crevices, coral ledges","diet":"Detritus, parasites, small invertebrates","behavior":"Territorial cleaner","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Antennal Shrimp","latin":"Urocaridella antonbruunii","family":"Cleaner Shrimps","maxsize":"3 cm","habitat":"Coral reefs, cleaning stations","diet":"Parasites, organic particles","behavior":"Active cleaner","social":"Solitary, groups","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Sargassum Frogfish","latin":"Histrio histrio","family":"Frogfishes","maxsize":"20 cm","habitat":"Sargassum drift, pelagic debris zones","diet":"Small fish, crustaceans","behavior":"Ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Sexy Shrimp","latin":"Thor amboinensis","family":"Squat Shrimps","maxsize":"2 cm","habitat":"Sea anemones, coral branches","diet":"Detritus, mucus, plankton","behavior":"Commensal, rhythmic swaying","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Donald Duck Shrimp","latin":"Leander plumosus","family":"Prawns","maxsize":"6 cm","habitat":"Seagrass beds, algae-covered reefs, coral rubble and lagoons","diet":"Plankton, detritus, organic particles","behavior":"Nocturnal scavenger and filter feeder","social":"Solitary, small groups","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Durban Dancing Shrimp","latin":"Rhynchocinetes durbanensis","family":"Hinge-beak Shrimps","maxsize":"4 cm","habitat":"Coral reefs, caves and rubble","diet":"Detritus, plankton","behavior":"Nocturnal, active","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Whip Coral Crab","latin":"Xenocarcinus tuberculatus","family":"Commensal Crabs","maxsize":"3 cm","habitat":"Whip corals on reef slopes and walls","diet":"Organic particles, mucus, small invertebrates","behavior":"Obligate whip coral associate, highly camouflaged","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Hairy Coral Crab","latin":"Cymo quadrilobatus","family":"Coral Crabs","maxsize":"2.5 cm","habitat":"Branching coral colonies, especially Pocillopora and Acropora","diet":"Coral mucus, trapped organic particles, small invertebrates","behavior":"Obligate coral associate, cryptic","social":"Solitary, pairs","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Isopod (Marine Scavenger)","latin":"Arcturidae sp.","family":"Isopods","maxsize":"1 cm","habitat":"Algae, rubble, seagrass beds","diet":"Detritus, algae","behavior":"Slow crawler","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Porcelain Hermit Crab","latin":"Spiropagurus sp.","family":"Hermit Crabs","maxsize":"3 cm","habitat":"Coral rubble, sandy reefs","diet":"Detritus, algae","behavior":"Scavenger","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Sea Spider","latin":"Endeis flaccida","family":"Sea Spiders","maxsize":"2 cm","habitat":"Coral reefs, hydroid colonies, algae-covered rubble","diet":"Hydroids and soft-bodied colonial invertebrates","behavior":"Ectoparasitic, slow-moving, highly cryptic","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Crown Coral Crab","latin":"Quadrella coronata","family":"Coral Crabs","maxsize":"2 cm","habitat":"Branching corals (especially Acropora spp.), reef slopes","diet":"Coral mucus, small organic particles","behavior":"Commensal, cryptic, nocturnal","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Lance Shrimp\n\nOcellated Sawblade Shrimp","latin":"Tozeuma lanceolatum","family":"Pipe Shrimps","maxsize":"5 cm","habitat":"Seagrass, algae beds","diet":"Plankton, detritus","behavior":"Camouflaged, stick-like","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Ridged Swimming Crab","latin":"Charybdis natator","family":"Swimming Crabs","maxsize":"12 cm","habitat":"Sandy bottoms, seagrass beds, lagoons and reef flats","diet":"Mollusks, crustaceans, small fishes","behavior":"Nocturnal active predator","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Blue Swimming Crab","latin":"Portunus pelagicus","family":"Swimming Crabs","maxsize":"20 cm","habitat":"Sandy bottoms, seagrass beds, lagoons and coastal reefs","diet":"Mollusks, crustaceans, small fishes","behavior":"Active swimmer, fast predator and scavenger","social":"Solitary, seasonal aggregations","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Peacock Mantis Shrimp","latin":"Odontodactylus scyllarus","family":"Mantis Shrimps","maxsize":"18 cm","habitat":"Coral rubble, reef flats and sandy burrows","diet":"Crustaceans, mollusks, small fishes","behavior":"Powerful smash predator","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Common Mantis Shrimp","latin":"Pseudosquilla ciliata","family":"Mantis Shrimps","maxsize":"20 cm","habitat":"Seagrass beds, rubble reefs and sandy bottoms","diet":"Crustaceans, mollusks, small fishes","behavior":"Ambush predator","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Zebra Mantis Shrimp","latin":"Lysiosquilla maculata","family":"Mantis Shrimps","maxsize":"38 cm","habitat":"Deep sandy burrows near coral reefs","diet":"Fishes, shrimps and other crustaceans","behavior":"Burrow-dwelling ambush predator","social":"Solitary","group":"Marine Invertebrates (Crustaceans, Mollusks & Others)"},{"common":"Common Seahorse","latin":"Hippocampus kuda","family":"Seahorses","maxsize":"30 cm","habitat":"Seagrass beds, mangroves, shallow coral reefs","diet":"Small crustaceans (copepods, amphipods)","behavior":"Ambush feeder, slow moving","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Giraffe Seahorse","latin":"Hippocampus camelopardalis","family":"Seahorses","maxsize":"35 cm","habitat":"Mangroves, estuaries, sheltered reefs","diet":"Small crustaceans","behavior":"Ambush feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Thorny Seahorse","latin":"Hippocampus histrix","family":"Seahorses","maxsize":"17 cm","habitat":"Coral reefs, rubble slopes, gorgonians","diet":"Small planktonic crustaceans","behavior":"Camouflaged ambush feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Réunion Seahorse","latin":"Hippocampus borboniensis","family":"Seahorses","maxsize":"15 cm","habitat":"Coral reefs, rubble areas and seagrass beds","diet":"Small crustaceans","behavior":"Ambush feeder, highly cryptic","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Common Seamoth","latin":"Eurypegasus draconis","family":"Seamoths","maxsize":"10 cm","habitat":"Sandy bottoms, rubble, seagrass edges","diet":"Small benthic invertebrates","behavior":"Bottom crawler, cryptic","social":"Solitary","group":"Bony Fishes"},{"common":"Hairy Pipefish","latin":"Acentronura tentaculata","family":"Pipefishes & Seahorses","maxsize":"6 cm","habitat":"Seagrass beds, coral rubble, soft coral areas","diet":"Small crustaceans (copepods, amphipods)","behavior":"Highly cryptic ambush feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Shortspine Pygmy Pipehorse","latin":"Acentronura breviperula","family":"Pipefishes & Seahorses","maxsize":"5 cm","habitat":"Seagrass beds, coral rubble, algae-covered reefs","diet":"Small crustaceans (copepods, amphipods)","behavior":"Extremely cryptic ambush feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Robust Ghost Pipefish","latin":"Solenostomus cyanopterus","family":"Ghost Pipefishes","maxsize":"16 cm","habitat":"Soft coral reefs, seagrass beds and sheltered lagoons","diet":"Small crustaceans and zooplankton","behavior":"Cryptic ambush feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Alligator Pipefish","latin":"Syngnathoides biaculeatus","family":"Pipefishes & Seahorses","maxsize":"30 cm","habitat":"Seagrass beds, mangroves and sheltered lagoons","diet":"Small crustaceans","behavior":"Slow-moving suction feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Bluestripe Pipefish","latin":"Doryrhamphus excisus","family":"Pipefishes & Seahorses","maxsize":"7 cm","habitat":"Coral reefs, caves and overhangs","diet":"Small planktonic crustaceans","behavior":"Cleaner and plankton feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Ornate Ghost Pipefish","latin":"Solenostomus paradoxus","family":"Ghost Pipefishes","maxsize":"12 cm","habitat":"Soft coral reefs, crinoids, seagrass beds and rubble slopes","diet":"Small crustaceans and zooplankton","behavior":"Extreme camouflage ambush feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Thin Ghost Pipefish","latin":"Solenostomus leptosoma","family":"Ghost Pipefishes","maxsize":"13 cm","habitat":"Seagrass beds, soft corals and sheltered reefs","diet":"Small crustaceans and zooplankton","behavior":"Cryptic ambush feeder","social":"Solitary, pairs","group":"Bony Fishes"},{"common":"Green Sea Turtle","latin":"Chelonia mydas","family":"Sea Turtles","maxsize":"140 cm","habitat":"Seagrass beds, lagoons, coral reefs","diet":"Seagrass, algae","behavior":"Herbivorous grazer","social":"Juveniles solitary, adults migratory aggregations","group":"Reptiles & Marine Megafauna"},{"common":"Hawksbill Turtle","latin":"Eretmochelys imbricata","family":"Sea Turtles","maxsize":"90 cm","habitat":"Coral reefs, lagoons, reef slopes","diet":"Sponges, invertebrates","behavior":"Reef forager","social":"Solitary","group":"Reptiles & Marine Megafauna"},{"common":"Banded Snake Eel","latin":"Myrichthys maculosus","family":"Snake Eels","maxsize":"120 cm","habitat":"Sandy bottoms, rubble slopes, lagoons","diet":"Crustaceans, small fishes","behavior":"Burrowing ambush predator","social":"Solitary","group":"Bony Fishes"},{"common":"Flap-necked Chameleon","latin":"Chamaeleo dilepis","family":"Chameleons","maxsize":"30 cm","habitat":"Coastal bush, forest edges near reefs","diet":"Insects","behavior":"Slow ambush predator","social":"Solitary","group":"Terrestrial Wildlife"},{"common":"Humpback Whale","latin":"Megaptera novaeangliae","family":"Baleen Whales","maxsize":"1400.0","habitat":"Open ocean","diet":"Krill / plankton","behavior":"Migratory filter feeder","social":"Groups","group":"Marine Mammal"},{"common":"Indian Ocean Humpback Dolphin","latin":"Sousa plumbea","family":"Dolphins","maxsize":"250.0","habitat":"Coastal waters","diet":"Fish / cephalopods","behavior":"Coastal hunter","social":"Pods","group":"Marine Mammal"},{"common":"Lattice Table Coral","latin":"Acropora clathrata","family":"Staghorn Corals","maxsize":"300.0","habitat":"Shallow reef","diet":"Zooplankton","behavior":"Reef builder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Porites Cylindrica","latin":"Porites cylindrica","family":"Massive Corals","maxsize":"200.0","habitat":"Reef flat","diet":"Plankton","behavior":"Reef builder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Porites Rus","latin":"Porites rus","family":"Massive Corals","maxsize":"250.0","habitat":"Reef slope","diet":"Plankton","behavior":"Reef builder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Helmet Coral","latin":"Halomitra pileus","family":"Massive Coral","maxsize":"150.0","habitat":"Reef slope","diet":"Plankton","behavior":"Reef builder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Pearl Bubble Coral","latin":"Physogyra lichtensteini","family":"Bubble Coral","maxsize":"100.0","habitat":"Reef slope","diet":"Plankton","behavior":"Photosynthetic symbiosis","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Hedgehog Coral","latin":"Echinopora hirsutissima","family":"Plate Coral","maxsize":"200.0","habitat":"Reef slope","diet":"Plankton","behavior":"Reef builder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Open Brain Coral","latin":"Lobophyllia sp.","family":"Brain Corals","maxsize":"150.0","habitat":"Reef slope","diet":"Plankton","behavior":"Reef builder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Plate Coral","latin":"Pachyseris speciosa","family":"Plate Coral","maxsize":"200.0","habitat":"Deep reef","diet":"Plankton","behavior":"Slow growth reef builder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Blue Button","latin":"Porpita porpita","family":"Blue Button","maxsize":"5.0","habitat":"Pelagic surface","diet":"Plankton","behavior":"Drifting colony","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Upside-down Jellyfish","latin":"Cassiopea andromeda","family":"Jellyfish","maxsize":"25 cm","habitat":"Lagoons, mangroves, shallow sandy seagrass areas","diet":"Plankton, dissolved organic matter (via symbiotic algae)","behavior":"Symbiotic, sits inverted on seabed, gentle pulsing","social":"Colonial (polyp-based life cycle)","group":"Jellyfish & Other Cnidarians"},{"common":"Mastigias Jelly","latin":"Mastigias papua","family":"Jellyfish","maxsize":"30 cm","habitat":"Lagoons, coastal reefs, semi-enclosed marine lakes","diet":"Plankton, dissolved organic matter (via symbiotic algae)","behavior":"Slow-moving, often diurnal, symbiotic with zooxanthellae","social":"Solitary (planktonic medusa stage)","group":"Jellyfish & Other Cnidarians"},{"common":"Cyaneid Jelly","latin":"Cyaneidae sp.","family":"Jellyfish","maxsize":"50.0","habitat":"Open water","diet":"Plankton","behavior":"Bloom forming","social":"Solitary","group":"Corals, Sponges etc"},{"common":"Large Tube Sponge","latin":"Haliclona fascigera","family":"Sponges","maxsize":"80.0","habitat":"Reef wall","diet":"Dissolved organic matter","behavior":"Filter feeder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Pseudoceratina Sponge","latin":"Pseudoceratina purpurea","family":"Sponges","maxsize":"60.0","habitat":"Reef caves","diet":"Bacteria / particles","behavior":"Filter feeder","social":"Colonial","group":"Corals, Sponges etc"},{"common":"Devil’s Hand Coral","latin":"Alcyonium spp. (Devil’s Hand Corals)","family":"Soft Corals","maxsize":"30 cm","habitat":"Coral reefs, reef slopes","diet":"Plankton, dissolved organic matter","behavior":"Sessile filter feeder","social":"Colonial","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"},{"common":"Blue Coral","latin":"Conglomeratusclera coerulea","family":"Pulse Corals","maxsize":"20 cm","habitat":"Shallow coral reefs, lagoon patches","diet":"Plankton, dissolved organics","behavior":"Pulsing filter feeder","social":"Colonial","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"},{"common":"Blue Sea Star","latin":"Linckia laevigata","family":"Brittle & Sea Stars","maxsize":"30 cm","habitat":"Coral reefs, rubble slopes","diet":"Detritus, biofilm","behavior":"Grazer, slow-moving","social":"Solitary","group":"Echinoderms (Sea Stars, Urchins & Allies)"},{"common":"Sea Lettuce","latin":"Ulva intestinalis","family":"Green Algae","maxsize":"20 cm","habitat":"Shallow lagoons, reef flats","diet":"Nutrients, dissolved organics","behavior":"Photosynthetic","social":"Sessile mats","group":"Algae & Marine Plants"},{"common":"Red Algae (Dasya spp.)","latin":"Dasya sp.","family":"Red Algae","maxsize":"15 cm","habitat":"Coral reefs, lagoon rubble","diet":"Photosynthetic","behavior":"Sessile","social":"Sessile","group":"Algae & Marine Plants"},{"common":"Moon Jelly","latin":"(Aurelia-type Cyaneid Jellies)","family":"Jellyfish","maxsize":"25 cm","habitat":"Pelagics, lagoons, reef edges","diet":"Plankton","behavior":"Passive drifter","social":"Solitary","group":"Jellyfish & Other Cnidarians"},{"common":"Knobbly Sea Star","latin":"Fromia nodosa","family":"Brittle & Sea Stars","maxsize":"15 cm","habitat":"Coral reefs, rubble zones","diet":"Detritus, biofilm","behavior":"Grazer","social":"Solitary","group":"Echinoderms (Sea Stars, Urchins & Allies)"},{"common":"Feather Star","latin":"Pteroeides breviradiatum","family":"Feather Stars","maxsize":"25 cm","habitat":"Coral reefs, reef slopes with strong currents","diet":"Plankton, suspended organic particles","behavior":"Filter feeder, nocturnal, extends arms into current","social":"Solitary or small clusters","group":"Echinoderms (Sea Stars, Urchins & Allies)"},{"common":"Green Bubble Algae","latin":"Valonia ventricosa","family":"Green Algae","maxsize":"5 cm","habitat":"Reef flats, lagoons","diet":"Nutrients, photosynthesis","behavior":"Sessile bubble-forming algae","social":"Solitary clusters","group":"Algae & Marine Plants"},{"common":"Mini Carpet Anemone","latin":"Stichodactyla tapetum","family":"Sea Anemones","maxsize":"20 cm","habitat":"Coral reefs, lagoon rubble, sandy patches","diet":"Small fish, plankton, organic debris","behavior":"Sessile ambush predator, often hosting shrimps","social":"Solitary","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"},{"common":"Tube Sponge","latin":"Pseudoceratina purpurea","family":"Sponges","maxsize":"50 cm","habitat":"Coral reefs, shaded reef walls, caves","diet":"Dissolved organic matter, bacteria, plankton","behavior":"Filter feeder, tubular or encrusting form","social":"Colonial","group":"Marine Invertebrates (Sponges & Porifera)"},{"common":"Sea Pen","latin":"Alicia pretiosa","family":"Sea Anemones","maxsize":"30 cm","habitat":"Sandy bottoms, lagoon plains","diet":"Plankton, organic particles","behavior":"Sessile filter feeder","social":"Colonial","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"},{"common":"Encrusting Sponge","latin":"Lendenfeldia chondrodes","family":"Sponges","maxsize":"60 cm","habitat":"Reef slopes, caves, shaded areas","diet":"Dissolved organic matter, bacteria","behavior":"Sessile filter feeder","social":"Colonial","group":"Marine Invertebrates (Sponges & Porifera)"},{"common":"Branching Fire Coral","latin":"Millepora dichotoma","family":"Hydrocorals","maxsize":"40 cm","habitat":"Coral reefs, reef slopes, outer reef crests","diet":"Plankton, dissolved organic matter","behavior":"Sessile colonial hydrozoan, highly stinging","social":"Colonial","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"},{"common":"Plate Fire Coral","latin":"Millepora platyphylla","family":"Hydrocorals","maxsize":"60 cm","habitat":"Exposed reef flats, reef crests, wave-exposed areas","diet":"Plankton, dissolved organic matter","behavior":"Sessile colonial hydrozoan forming plates, highly stinging","social":"Colonial","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"},{"common":"Massive Fire Coral","latin":"Millepora exaesa","family":"Hydrocorals","maxsize":"80 cm","habitat":"Reef slopes, reef flats, lagoon patch reefs","diet":"Plankton, dissolved organic matter","behavior":"Sessile encrusting/laminar hydrocoral, highly stinging","social":"Colonial","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"},{"common":"Fine Fire Coral","latin":"Millepora intricata","family":"Hydrocorals","maxsize":"30 cm","habitat":"Coral reefs, rubble zones, sheltered reef slopes","diet":"Plankton, dissolved organic matter","behavior":"Sessile branching hydrocoral, highly stinging","social":"Colonial","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"},{"common":"Bubble-tip Anemone","latin":"Entacmaea quadricolor","family":"Sea Anemones","maxsize":"40 cm","habitat":"Coral reefs, lagoon patches, reef slopes and sheltered reef walls","diet":"Plankton, small fishes, dissolved organic matter","behavior":"Photosynthetic via symbiotic zooxanthellae, often hosts clownfish","social":"Solitary, sometimes forming clusters","group":"Marine Invertebrates (Corals, Anemones & Other Cnidarians)"}];
+
+const IDENT_FIELDS = [
+  {label:'Common Name', key:'common'},
+  {label:'Scientific Name', key:'latin', italic:true},
+  {label:'Family', key:'family'},
+  {label:'Group', key:'group'},
+  {label:'Max Size', key:'maxsize'}
+];
+const BEHAVIOR_FIELDS = [
+  {label:'Habitat', key:'habitat'},
+  {label:'Diet', key:'diet'},
+  {label:'Behavior', key:'behavior'},
+  {label:'Social', key:'social'},
+  {label:'Typical Depth', key:null}
+];
+const FIELD_LABELS = ['Habitat Zone','Abundance','Season','Location','Category'];
+
+const commonSet = new Set(DATA.map(r => r.common));
+const latinSet  = new Set(DATA.map(r => r.latin).filter(Boolean));
+
+const masterList = Array.from(new Set(
+  DATA.flatMap(r => [r.common, r.latin].filter(Boolean))
+)).sort((a,b) => a.localeCompare(b));
+
+function findByCommon(name){
+  return DATA.find(r => r.common === name);
+}
+function findByLatin(name){
+  return DATA.find(r => r.latin === name);
+}
+
+function formatMaxSize(v){
+  if(!v) return '';
+  if(/^\d+(\.\d+)?$/.test(v)){
+    const n = parseFloat(v);
+    return (Number.isInteger(n) ? n : n.toFixed(1)) + ' cm';
+  }
+  return v;
+}
+
+function resolve(input){
+  if(!input) return null;
+  let commonName = null, latinName = null;
+  if(commonSet.has(input)){
+    commonName = input;
+    const rec = findByCommon(input);
+    latinName = rec ? rec.latin : '';
+  } else if(latinSet.has(input)){
+    latinName = input;
+    const rec = findByLatin(input);
+    commonName = rec ? rec.common : '';
+  } else {
+    return null;
+  }
+  const rec = findByCommon(commonName) || findByLatin(latinName);
+  return {commonName, latinName, rec};
+}
+
+const heroBody = document.getElementById('heroBody');
+const gridIdent = document.getElementById('gridIdent');
+const gridBehavior = document.getElementById('gridBehavior');
+const gridField = document.getElementById('gridField');
+const resultStamp = document.getElementById('resultStamp');
+const countLabel = document.getElementById('countLabel');
+countLabel.textContent = DATA.length;
+
+function statTile(label, value, opts={}){
+  const div = document.createElement('div');
+  div.className = 'stat';
+  const valClass = ['stat-value', opts.muted ? 'muted':'', opts.italic ? 'val-italic':''].join(' ').trim();
+  div.innerHTML = `<div class="stat-label">${label}</div><div class="${valClass}" style="${opts.italic?'font-style:italic;':''}">${value}</div>`;
+  return div;
+}
+
+function render(input){
+  const result = resolve(input);
+
+  gridIdent.innerHTML = '';
+  gridBehavior.innerHTML = '';
+  gridField.innerHTML = '';
+
+  if(!result){
+    heroBody.innerHTML = `<div class="hero-empty">Select a species above to load its record.</div>`;
+    IDENT_FIELDS.forEach(f => gridIdent.appendChild(statTile(f.label, '—', {muted:true})));
+    BEHAVIOR_FIELDS.forEach(f => gridBehavior.appendChild(statTile(f.label, '—', {muted:true})));
+    FIELD_LABELS.forEach(l => gridField.appendChild(statTile(l, '—', {muted:true})));
+    resultStamp.textContent = 'No species selected';
+    return;
+  }
+
+  const {commonName, latinName, rec} = result;
+  const notFound = !rec;
+
+  heroBody.innerHTML = `
+    <div class="hero-name">${notFound ? 'Not found' : commonName}</div>
+    ${latinName ? `<div class="hero-latin">${latinName}</div>` : ''}
+    ${rec ? `<div class="hero-tags">
+        ${rec.family ? `<span class="tag aqua">${rec.family}</span>` : ''}
+        ${rec.group ? `<span class="tag coral">${rec.group}</span>` : ''}
+      </div>` : ''}
+  `;
+
+  IDENT_FIELDS.forEach(f => {
+    let val;
+    if(f.key === 'common') val = commonName || 'Not found';
+    else if(f.key === 'latin') val = latinName || 'Not found';
+    else if(f.key === 'maxsize') val = rec ? (formatMaxSize(rec.maxsize) || 'Not found') : 'Not found';
+    else val = rec ? (rec[f.key] || 'Not found') : 'Not found';
+    gridIdent.appendChild(statTile(f.label, val, {italic:f.italic}));
+  });
+
+  BEHAVIOR_FIELDS.forEach(f => {
+    if(f.key === null){
+      gridBehavior.appendChild(statTile(f.label, '—', {muted:true}));
+    } else {
+      const val = rec ? (rec[f.key] || 'Not found') : 'Not found';
+      gridBehavior.appendChild(statTile(f.label, val));
+    }
+  });
+
+  FIELD_LABELS.forEach(l => gridField.appendChild(statTile(l, '—', {muted:true})));
+
+  resultStamp.textContent = notFound ? 'No match in catalog' : `Showing record for "${commonName}"`;
+}
+
+/* ---- Combobox / dropdown (mirrors the sheet's data-validation list) ---- */
+const input = document.getElementById('speciesInput');
+const dropdown = document.getElementById('dropdownList');
+const clearBtn = document.getElementById('clearBtn');
+let activeIndex = -1;
+let currentMatches = [];
+
+function escapeHTML(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function highlight(text, q){
+  if(!q) return escapeHTML(text);
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if(idx === -1) return escapeHTML(text);
+  return escapeHTML(text.slice(0,idx)) + '<mark>' + escapeHTML(text.slice(idx,idx+q.length)) + '</mark>' + escapeHTML(text.slice(idx+q.length));
+}
+
+function openDropdown(query){
+  const q = query.trim().toLowerCase();
+  let matches = q
+    ? masterList.filter(n => n.toLowerCase().includes(q)).slice(0, 60)
+    : masterList.slice(0, 60);
+  currentMatches = matches;
+  activeIndex = -1;
+
+  if(matches.length === 0){
+    dropdown.innerHTML = `<div class="dropdown-empty">No species match “${escapeHTML(query)}”</div>`;
+  } else {
+    dropdown.innerHTML = matches.map((name, i) => {
+      const rec = findByCommon(name) || findByLatin(name);
+      const isLatin = !commonSet.has(name);
+      const sub = rec ? (isLatin ? rec.common : rec.latin) : '';
+      return `<div class="dropdown-item" role="option" data-index="${i}">
+        <span class="dn-common" style="${isLatin?'font-style:italic;':''}">${highlight(name,query)}</span>
+        ${sub ? `<span class="dn-latin">${escapeHTML(sub)}</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+  dropdown.classList.add('open');
+  input.setAttribute('aria-expanded','true');
+}
+function closeDropdown(){
+  dropdown.classList.remove('open');
+  input.setAttribute('aria-expanded','false');
+  activeIndex = -1;
+}
+function selectName(name){
+  input.value = name;
+  closeDropdown();
+  render(name);
+}
+
+input.addEventListener('focus', () => openDropdown(input.value));
+input.addEventListener('input', () => openDropdown(input.value));
+input.addEventListener('click', () => openDropdown(input.value));
+
+dropdown.addEventListener('mousedown', (e) => {
+  const item = e.target.closest('.dropdown-item');
+  if(!item) return;
+  const i = parseInt(item.dataset.index, 10);
+  if(currentMatches[i]) selectName(currentMatches[i]);
+});
+
+input.addEventListener('keydown', (e) => {
+  const items = dropdown.querySelectorAll('.dropdown-item');
+  if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    if(!dropdown.classList.contains('open')) openDropdown(input.value);
+    activeIndex = Math.min(activeIndex + 1, items.length - 1);
+    updateActive(items);
+  } else if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    activeIndex = Math.max(activeIndex - 1, 0);
+    updateActive(items);
+  } else if(e.key === 'Enter'){
+    e.preventDefault();
+    if(activeIndex >= 0 && currentMatches[activeIndex]){
+      selectName(currentMatches[activeIndex]);
+    } else if(currentMatches.length === 1){
+      selectName(currentMatches[0]);
+    } else {
+      render(input.value);
+      closeDropdown();
+    }
+  } else if(e.key === 'Escape'){
+    closeDropdown();
+  }
+});
+function updateActive(items){
+  items.forEach((it,i) => it.classList.toggle('active', i === activeIndex));
+  if(items[activeIndex]) items[activeIndex].scrollIntoView({block:'nearest'});
+}
+
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.search-field')) closeDropdown();
+});
+
+clearBtn.addEventListener('click', () => {
+  input.value = '';
+  render('');
+  input.focus();
+  openDropdown('');
+});
+
+/* ---- Initial state mirrors the workbook's saved value ---- */
+const DEFAULT_SPECIES = "Torpedo Ray";
+input.value = DEFAULT_SPECIES;
+render(DEFAULT_SPECIES);
+</script>
 </body>
 </html>
