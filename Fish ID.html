@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2487.7">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1">&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1">&lt;title&gt;Search Sheet Viewer&lt;/title&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;style&gt;</p>
+<p class="p1">body {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>margin: 0;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>font-family: Arial, sans-serif;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>background: #0f172a;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>color: white;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* Container with horizontal scroll */</p>
+<p class="p1">.wrapper {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>padding: 20px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>overflow-x: auto;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* Spreadsheet grid */</p>
+<p class="p1">.sheet {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>display: grid;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>grid-template-columns: repeat(5, minmax(160px, 1fr));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>grid-auto-rows: 42px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>gap: 1px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>background: #334155;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>min-width: 900px;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* Cell style */</p>
+<p class="p1">.cell {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>background: #1e293b;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>border: none;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>color: white;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>padding: 6px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>font-size: 13px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>outline: none;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* Header row */</p>
+<p class="p1">.header {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>background: #0ea5e9;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>font-weight: bold;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>text-align: center;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* Readonly styling */</p>
+<p class="p1">.readonly {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>background: #111827;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>color: #9ca3af;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* Dropdown styling */</p>
+<p class="p1">select.cell {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>appearance: none;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>cursor: pointer;</p>
+<p class="p1">}</p>
+<p class="p1">&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;div class="wrapper"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="sheet" class="sheet"&gt;&lt;/div&gt;</p>
+<p class="p1">&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;script&gt;</p>
+<p class="p1">// -------------------------</p>
+<p class="p1">// CONFIG (your sheet data)</p>
+<p class="p1">// -------------------------</p>
+<p class="p2"><br></p>
+<p class="p1">const rows = 10;</p>
+<p class="p1">const cols = 5;</p>
+<p class="p2"><br></p>
+<p class="p1">// Example dropdown values (customize freely)</p>
+<p class="p1">const dropdownOptions = {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>"B2": ["Fish", "Coral", "Nudibranch"],</p>
+<p class="p1"><span class="Apple-converted-space">    </span>"C2": ["Yes", "No"],</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">// Example read-only cells (like formulas)</p>
+<p class="p1">const readOnlyCells = ["A1", "B1", "C1", "D1", "E1"];</p>
+<p class="p2"><br></p>
+<p class="p1">// -------------------------</p>
+<p class="p1">// BUILD GRID</p>
+<p class="p1">// -------------------------</p>
+<p class="p2"><br></p>
+<p class="p1">const sheet = document.getElementById("sheet");</p>
+<p class="p2"><br></p>
+<p class="p1">function colLetter(i) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return String.fromCharCode(65 + i); // A-E</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">for (let r = 1; r &lt;= rows; r++) {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>for (let c = 0; c &lt; cols; c++) {</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>let cellId = colLetter(c) + r;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// HEADER ROW</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (r === 1) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let div = document.createElement("div");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>div.className = "cell header";</p>
+<p class="p1"><span class="Apple-converted-space">            </span>div.innerText = cellId;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>sheet.appendChild(div);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>continue;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// DROPDOWN CELL</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (dropdownOptions[cellId]) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let select = document.createElement("select");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>select.className = "cell";</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>dropdownOptions[cellId].forEach(opt =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>let o = document.createElement("option");</p>
+<p class="p1"><span class="Apple-converted-space">                </span>o.value = opt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>o.innerText = opt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>select.appendChild(o);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>sheet.appendChild(select);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>continue;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// READ ONLY CELL</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (readOnlyCells.includes(cellId)) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let div = document.createElement("div");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>div.className = "cell readonly";</p>
+<p class="p1"><span class="Apple-converted-space">            </span>div.contentEditable = false;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>div.innerText = "";</p>
+<p class="p1"><span class="Apple-converted-space">            </span>sheet.appendChild(div);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>continue;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// NORMAL EDITABLE CELL</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let input = document.createElement("input");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>input.className = "cell";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>input.setAttribute("data-cell", cellId);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>sheet.appendChild(input);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1">}</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p2"><br></p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
